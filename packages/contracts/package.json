@@ -1,0 +1,12 @@
+{
+  "name": "@sigilo/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sigilo smart contracts (Foundry, Monad testnet).",
+  "scripts": {
+    "build": "forge build",
+    "test": "forge test",
+    "fmt": "forge fmt",
+    "fmt:check": "forge fmt --check"
+  }
+}

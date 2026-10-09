@@ -1,0 +1,22 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+test = "test"
+script = "script"
+evm_version = "prague"
+optimizer = true
+optimizer_runs = 200
+fs_permissions = [{ access = "read", path = "./" }]
+
+[rpc_endpoints]
+monad_testnet = "${MONAD_TESTNET_RPC_URL}"
+
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+
+# Monad notes (see .claude/skills/monad + gas):
+# - run tests/scripts with `--execution-network monad` to match Monad gas semantics
+# - Monad charges gas on the gas *limit*; max contract size is 128 KB (HonkVerifier fits)
