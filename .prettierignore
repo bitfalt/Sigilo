@@ -1,0 +1,10 @@
+node_modules
+.next
+dist
+pnpm-lock.yaml
+packages/contracts/lib
+packages/contracts/out
+packages/contracts/cache
+packages/circuits/**/target
+.claude/skills
+SPEC.md
