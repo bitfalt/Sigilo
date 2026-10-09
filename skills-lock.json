@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "skills": {
+    "addresses": {
+      "source": "therealharpaljadeja/monskills",
+      "sourceType": "github",
+      "skillPath": "skills/addresses/SKILL.md",
+      "computedHash": "e94f9a2466d4367587ecaf78e77c13adcde7bb4c141bea909fc63347b6f8570e"
+    },
+    "concepts": {
+      "source": "therealharpaljadeja/monskills",
+      "sourceType": "github",
+      "skillPath": "skills/concepts/SKILL.md",
+      "computedHash": "f11bcdf6d850741a4364f0c453cd69e388d186c052bf7c7f5abff65ca2b26acf"
+    },
+    "gas": {
+      "source": "therealharpaljadeja/monskills",
+      "sourceType": "github",
+      "skillPath": "skills/gas/SKILL.md",
+      "computedHash": "8f1207767d018dec9648bace466c3319619e3cd71db9a6312b0795cb137e9186"
+    },
+    "monad": {
+      "source": "docs.monad.xyz",
+      "sourceUrl": "https://docs.monad.xyz",
+      "sourceType": "well-known",
+      "computedHash": "829ace51cbdb3c7393dc1f9c2c3b5347f61e279236e10f6456627450e933c7d0",
+      "wellKnownDigest": "sha256:ab29c80e6f09597f37997e0398b98eadeb57851350a78d92303ad71bf00d483f"
+    },
+    "mppx": {
+      "source": "tempoxyz/mpp",
+      "sourceType": "github",
+      "skillPath": "skills/mppx/SKILL.md",
+      "computedHash": "b926c08e810bad25a139ef7cf171054bc91f4eaf4d7ab191b5aace90fd591b02"
+    },
+    "unlink": {
+      "source": "docs.unlink.xyz",
+      "sourceUrl": "https://docs.unlink.xyz",
+      "sourceType": "well-known",
+      "computedHash": "47b746c76ab4ecaf72af4e69b5d94685178e6983e418808d6b31f5b2424cd4e4",
+      "wellKnownDigest": "sha256:7b212ca180b1da0b4f30deb473e9a57139909ccda9de31658203bebc997dc1e0"
+    }
+  }
+}

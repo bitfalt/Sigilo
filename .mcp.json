@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "unlink-docs": {
+      "type": "http",
+      "url": "https://docs.unlink.xyz/mcp"
+    },
+    "monad-docs": {
+      "type": "http",
+      "url": "https://docs.monad.xyz/mcp"
+    },
+    "mpp-docs": {
+      "type": "http",
+      "url": "https://mpp.dev/api/mcp"
+    },
+    "agora-docs": {
+      "type": "http",
+      "url": "https://docs.agora.finance/_mcp/server"
+    }
+  }
+}
