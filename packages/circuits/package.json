@@ -1,0 +1,14 @@
+{
+  "name": "@sigilo/circuits",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Sigilo Noir circuits (income passport) and generated artifacts.",
+  "exports": {
+    "./income_passport.json": "./artifacts/income_passport.json"
+  },
+  "scripts": {
+    "build": "./scripts/build.sh",
+    "test": "cd income_passport && nargo test",
+    "fmt": "cd income_passport && nargo fmt"
+  }
+}

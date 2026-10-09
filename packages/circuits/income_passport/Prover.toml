@@ -1,0 +1,15 @@
+employer_id = 0
+gross = [0, 0, 0]
+nonce = 0
+passport_secret = 0
+periods = [0, 0, 0]
+pseudonym_out = 0
+registry_is_right = [[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false], [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]]
+registry_root = 0
+registry_siblings = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+run_is_right = [[false, false, false, false, false, false, false, false], [false, false, false, false, false, false, false, false], [false, false, false, false, false, false, false, false]]
+run_roots = [0, 0, 0]
+run_siblings = [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]]
+salts = [0, 0, 0]
+scope = 0
+threshold = 0

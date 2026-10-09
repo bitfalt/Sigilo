@@ -8,3 +8,5 @@ packages/contracts/cache
 packages/circuits/**/target
 .claude/skills
 SPEC.md
+packages/circuits/artifacts
+packages/contracts/src/generated
