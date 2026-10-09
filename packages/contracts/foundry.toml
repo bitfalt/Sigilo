@@ -15,8 +15,12 @@ monad_testnet = "${MONAD_TESTNET_RPC_URL}"
 
 [fmt]
 line_length = 100
+ignore = ["src/generated/**"]
 tab_width = 4
 bracket_spacing = false
+
+[lint]
+ignore = ["src/generated/**"]
 
 # Monad notes (see .claude/skills/monad + gas):
 # - `network = "monad"` enables Monad execution semantics (Foundry 1.8+; CLI: `-n monad`)
