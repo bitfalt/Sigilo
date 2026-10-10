@@ -12,7 +12,8 @@
     "./hash": "./src/hash.ts",
     "./merkle": "./src/merkle.ts",
     "./period": "./src/period.ts",
-    "./scope": "./src/scope.ts"
+    "./scope": "./src/scope.ts",
+    "./passport": "./src/passport.ts"
   },
   "scripts": {
     "test": "vitest run",

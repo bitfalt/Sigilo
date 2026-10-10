@@ -5,3 +5,4 @@ export * from "./keys";
 export * from "./merkle";
 export * from "./period";
 export * from "./scope";
+export * from "./passport";
