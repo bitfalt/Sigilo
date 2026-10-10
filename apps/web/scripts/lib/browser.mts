@@ -14,9 +14,11 @@ export async function openBrowser(port: number, outDir: string) {
     process.env.CHROME_BIN ??
     `${process.env.HOME}/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell`;
   const profile = mkdtempSync(join(tmpdir(), "sigilo-e2e-"));
+  // Extra flags, e.g. CHROME_ARGS=--disable-web-security for a dev server on another port.
+  const extra = (process.env.CHROME_ARGS ?? "").split(/\s+/).filter(Boolean);
   const chrome = spawn(
     bin,
-    [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, "about:blank"],
+    [`--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, ...extra, "about:blank"],
     { stdio: "ignore" },
   );
 
