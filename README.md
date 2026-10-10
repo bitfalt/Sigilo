@@ -10,6 +10,21 @@ Live at **[sigilo.work](https://sigilo.work)** · Monad testnet · Monad Metropo
 | Workers   | [sigilo.work/app](https://sigilo.work/app)           | One balance, private payslips, Income Passport, send money home, take a salary advance      |
 | Lenders   | [sigilo.work/lender](https://sigilo.work/lender)     | Ask for an income check, verify it for $0.10, offer an advance repaid straight from payroll |
 
+## Try it (judges and testers)
+
+No test credentials needed: every account is a passkey you create on the spot, the lender is built in, and test money comes from a button. It runs on Monad testnet.
+
+**You need** a passkey manager that supports the WebAuthn PRF extension: Apple Passwords / iCloud Keychain (Safari or Chrome on iPhone and Mac), Google Password Manager (Chrome on Android, or desktop Chrome signed in), or 1Password. Bitwarden doesn't support PRF yet. Best setup: a laptop for the employer and lender, a phone for the worker.
+
+1. **Employer** (laptop): open [sigilo.work/employer](https://sigilo.work/employer) → _Create company account_. On testnet every company is verified automatically (KYB is simulated). Tap _Add test funds_, then add a person with a monthly salary (e.g. $2,400) and copy the invite link.
+2. **Worker** (phone): open the invite → _Create my account_ → _Activate Income Passport_. That's two passkey taps; the app shows how many seconds it took.
+3. **Payroll** (laptop): run payroll for the three previous months (pick each month chip, then _Run payroll_). Each run is one payout of shuffled, fixed-size pieces; _What the internet sees_ next to each run shows the public view. On the phone, the balance and payslips appear.
+4. **Income check** (laptop): open [sigilo.work/lender](https://sigilo.work/lender) → _New income check_ with a minimum at or below the salary (e.g. $1,500). Scan the QR with the phone → _Share my Income Passport_ (sealed on the phone in a few seconds). Back on the lender: _Verify for $0.10_ pays the Sigilo Verify API through MPP and shows _Income verified_.
+5. **Advance**: on the lender, _Offer a salary advance_. The offer appears on the phone's income-check page → _Take_. Run payroll for the current month: the installment is deducted on the payslip and repaid to the lender, who sees the progress.
+6. **Send home**: create a second account in another browser or device (that's Mom) → _Get money from family_ → share the link. Open it on the worker's phone → _Send_. It's delivered in about a second and shows up on Mom's account as _Money from María_.
+7. **New device**: clear the site's data (or use another device with the same synced passkey) → _Sign in with a passkey_. Balance, payslips and the Income Passport come back; nothing secret was stored.
+8. **Settings → Advanced** (behind a second passkey check): move everything to an external account, or export the keys.
+
 ## The problem
 
 Paying a remote team in stablecoins is fast and cheap, but it is **public payroll**: anyone who learns a worker's account can read her salary, her employer and her pay dates. In Latin America that is a safety problem, not just a privacy one. Meanwhile, proving income to rent an apartment or get a loan still means handing over contracts, payslips and bank statements, and foreign income in digital dollars is invisible to local credit.
