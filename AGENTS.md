@@ -6,9 +6,9 @@ Sigilo: private payroll → private income passport (Noir ZK) → MPP-paid verif
 
 ## Repo map
 - `apps/web`: Next.js 16 PWA (App Router, `cacheComponents`), Tailwind v4, shadcn/ui. **Read `apps/web/AGENTS.md`**: this Next.js version has breaking changes, and its docs live in `apps/web/node_modules/next/dist/docs/`.
-- `packages/core`: shared TS (key schedule, constants). Uses extensionless relative imports.
+- `packages/core`: shared TS (key schedule, Poseidon2 + Merkle trees, passport witness builder, constants). Uses extensionless relative imports.
 - `packages/contracts`: Foundry. `forge-std` is a git submodule. `src/generated/` is generated; never edit it by hand.
-- `packages/circuits`: Noir `income_passport` circuit, `scripts/build.sh`, and committed `artifacts/`.
+- `packages/circuits`: Noir `income_passport` circuit, `scripts/build.sh`, committed `artifacts/`, and a Node prover in `js/`.
 - `.claude/skills`: project skills (mera, unlink, monad, gas, concepts, addresses, mppx). `.mcp.json`: docs MCPs (Unlink, Monad, MPP, Agora).
 
 ## Commands
@@ -18,8 +18,9 @@ pnpm dev                                  # web on localhost:3000
 pnpm --filter @sigilo/web build|lint|typecheck
 pnpm --filter @sigilo/core test|typecheck
 cd packages/contracts && forge test       # network = "monad" is set in foundry.toml
-cd packages/circuits && pnpm test         # nargo test
+cd packages/circuits && pnpm test         # nargo test + JS e2e (noir_js + bb.js proof)
 cd packages/circuits && pnpm build        # regenerates artifacts/ and contracts/src/generated/HonkVerifier.sol
+cd packages/circuits && pnpm prove:fixture  # real proof → contracts/test/fixtures (rerun after build)
 ```
 
 ## Pinned toolchain (don't drift)
@@ -40,8 +41,9 @@ cd packages/circuits && pnpm build        # regenerates artifacts/ and contracts
 These are part of user identity and of on-chain state:
 - Key derivation salts, labels and path (`packages/core/src/keys.ts`, see the mera skill).
 - Hash domain tags and input layouts, tree depths, `PERIODS` (`packages/circuits/income_passport/src/lib.nr` ↔ `packages/core`).
+- Period = month index (`year*12 + month-1`), and gross/threshold are u64 USD cents (`packages/core/src/period.ts`, `constants.ts`).
 
-Changing any of them means updating both sides plus the vectors, then running `pnpm build` in circuits and redeploying the verifier.
+Changing any of them means updating both sides plus the vectors, then running `pnpm build` and `pnpm prove:fixture` in circuits and redeploying the verifier.
 
 ## Security and privacy
 - Never persist or log PRF outputs, private keys, seeds or the passport secret. Cache only public identity.
