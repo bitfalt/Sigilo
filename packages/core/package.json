@@ -13,7 +13,10 @@
     "./merkle": "./src/merkle.ts",
     "./period": "./src/period.ts",
     "./scope": "./src/scope.ts",
-    "./passport": "./src/passport.ts"
+    "./passport": "./src/passport.ts",
+    "./stealth": "./src/stealth.ts",
+    "./pieces": "./src/pieces.ts",
+    "./intent": "./src/intent.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -24,7 +27,8 @@
     "@noble/hashes": "^2.4.0",
     "@scure/bip32": "^2.4.0",
     "@scure/bip39": "^2.4.0",
-    "@zkpassport/poseidon2": "0.6.2"
+    "@zkpassport/poseidon2": "0.6.2",
+    "viem": "2.57.3"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
