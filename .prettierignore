@@ -10,3 +10,6 @@ packages/circuits/**/target
 SPEC.md
 packages/circuits/artifacts
 packages/contracts/src/generated
+apps/web/convex/_generated
+apps/web/.agents
+apps/web/.claude

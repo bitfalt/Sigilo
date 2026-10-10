@@ -6,7 +6,8 @@ import { v } from "convex/values";
 // - USD amounts are integer cents (`v.number()`, exact below 2^53).
 // - AUSD amounts are base-unit decimal strings (6 decimals; bigint-safe).
 // - Periods are month indexes (year * 12 + month - 1), as in the circuit.
-// Nothing secret is stored: receipts are ciphertext only, and keys never leave the device.
+// Blind server (SPEC.md §5): names, salaries and payslips are ciphertext; which one-time accounts
+// belong to whom is never stored. Keys never leave the device.
 
 const runStatus = v.union(
   v.literal("pending"),
@@ -42,16 +43,18 @@ export default defineSchema({
     employerId: v.string(),
     // Mirrors SigiloRegistry.isVerifiedEmployer (KYB stand-in).
     verified: v.boolean(),
-    // Custodial treasury (server-held key) that pays through SigiloPay.disperse.
+    // The admin's passkey-derived treasury account (S_EMPLOYER); also their session subject.
     treasuryAddress: v.string(),
-  }).index("by_employerId", ["employerId"]),
+  })
+    .index("by_employerId", ["employerId"])
+    .index("by_treasuryAddress", ["treasuryAddress"]),
 
   employees: defineTable({
     employer: v.id("employers"),
-    name: v.string(),
-    monthlySalaryCents: v.number(),
-    // Secret part of the invite link.
-    inviteCode: v.string(),
+    // Name and salary, encrypted in the employer's browser with the roster key (core/roster.ts).
+    roster: v.string(),
+    // sha256 of the invite code; the code itself only lives in the invite link.
+    inviteCodeHash: v.string(),
     status: v.union(v.literal("invited"), v.literal("active")),
     // Set when the invite is accepted.
     account: v.optional(v.id("accounts")),
@@ -59,7 +62,7 @@ export default defineSchema({
     passportCommitment: v.optional(v.string()),
   })
     .index("by_employer", ["employer"])
-    .index("by_inviteCode", ["inviteCode"])
+    .index("by_inviteCodeHash", ["inviteCodeHash"])
     .index("by_account", ["account"]),
 
   payrollRuns: defineTable({
@@ -128,6 +131,15 @@ export default defineSchema({
     signature: v.string(),
     status: v.union(v.literal("active"), v.literal("completed"), v.literal("cancelled")),
   }).index("by_employee_and_status", ["employee", "status"]),
+
+  // One-time sign-in challenges (convex/http.ts). The nonce comes from the HTTP action.
+  sessionChallenges: defineTable({
+    address: v.string(),
+    nonce: v.string(),
+    issuedAt: v.number(),
+    expiresAt: v.number(),
+    used: v.boolean(),
+  }).index("by_nonce", ["nonce"]),
 
   // Cache of AdvanceVault state (P1).
   advances: defineTable({

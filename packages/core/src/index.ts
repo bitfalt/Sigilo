@@ -12,4 +12,5 @@ export * from "./pieces";
 export * from "./receipts";
 export * from "./roster";
 export * from "./scope";
+export * from "./session";
 export * from "./stealth";

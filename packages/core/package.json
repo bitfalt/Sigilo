@@ -20,7 +20,8 @@
     "./deployments": "./src/deployments.ts",
     "./receipts": "./src/receipts.ts",
     "./payroll": "./src/payroll.ts",
-    "./roster": "./src/roster.ts"
+    "./roster": "./src/roster.ts",
+    "./session": "./src/session.ts"
   },
   "scripts": {
     "test": "vitest run",
