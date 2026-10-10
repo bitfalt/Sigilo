@@ -5,8 +5,13 @@ import { useEffect } from "react";
 // Client half of the landing's motion (the choreography itself lives in landing.css):
 // 1. Measures each of María's pieces' flight, from her payslip's net pay to its ledger slot, into
 //    CSS variables, so the same keyframes fit any layout.
-// 2. Where CSS scroll timelines are missing (and for the stamp everywhere), plays each moment once
-//    when it arrives: [data-play] goes "armed" (hidden at its first frame) → "on".
+// 2. Plays each moment once when it arrives, where CSS scroll timelines are missing (and for the
+//    hero's load moment everywhere, when it starts below the fold): [data-play] goes "armed"
+//    (held at its first frame) → "on". Elements marked [data-scrub] are scroll-driven in CSS when
+//    the browser supports it, so they're left alone there.
+// 3. Without scroll timelines, drives the parallax: one passive, rAF-throttled scroll listener
+//    writes --p (0 → 1) on each [data-par] element from positions measured up front, so scrolling
+//    never reads layout.
 // Renders nothing; without it (or with reduced motion) the page simply shows its final layout.
 
 const SPIN = [-9, 7, -5, 10];
@@ -57,10 +62,87 @@ function measureSplit(split: HTMLElement) {
   }
 }
 
+/** Play-once: hold every moment that hasn't been seen yet, and let it go when it arrives. */
+function playOnArrival(targets: HTMLElement[]) {
+  const play = (el: HTMLElement) => {
+    el.dataset.play = "on";
+    arrive.unobserve(el);
+  };
+  const arrive = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        // Mostly on screen, or (for anything taller than the screen) filling a good part of it.
+        if (
+          entry.intersectionRatio >= 0.55 ||
+          entry.intersectionRect.height >= window.innerHeight * 0.45
+        ) {
+          play(entry.target as HTMLElement);
+        }
+      }
+    },
+    { threshold: [0.15, 0.3, 0.55] },
+  );
+  for (const el of targets) {
+    // Only what hasn't been seen yet: anything already 30% on screen (or above) is left alone.
+    const box = layoutBox(el, null);
+    if (box.y - window.scrollY < window.innerHeight - box.h * 0.3) continue;
+    el.dataset.play = "armed";
+    arrive.observe(el);
+  }
+  return () => {
+    arrive.disconnect();
+    // Never leave anything hidden behind: unplayed moments fall back to their final state.
+    for (const el of targets) if (el.dataset.play === "armed") el.dataset.play = "";
+  };
+}
+
+/** Parallax without scroll timelines. [data-par="page"] follows the first screen of scrolling;
+ *  any other [data-par] follows its own trip across the screen. */
+function parallax(page: HTMLElement) {
+  const layers = [...page.querySelectorAll<HTMLElement>("[data-par]")];
+  if (!layers.length) return () => {};
+  page.dataset.motion = "js";
+  let boxes = layers.map((el) => layoutBox(el, null));
+  let viewport = window.innerHeight;
+  let frame = 0;
+
+  const update = () => {
+    frame = 0;
+    const y = window.scrollY;
+    layers.forEach((el, i) => {
+      const box = boxes[i];
+      const p =
+        el.dataset.par === "page" ? y / viewport : (y + viewport - box.y) / (viewport + box.h);
+      el.style.setProperty("--p", Math.min(1, Math.max(0, p)).toFixed(4));
+    });
+  };
+  const schedule = () => {
+    if (!frame) frame = requestAnimationFrame(update);
+  };
+  const measure = () => {
+    viewport = window.innerHeight;
+    boxes = layers.map((el) => layoutBox(el, null));
+    schedule();
+  };
+
+  measure();
+  const resize = new ResizeObserver(measure);
+  resize.observe(page);
+  window.addEventListener("scroll", schedule, { passive: true });
+  return () => {
+    resize.disconnect();
+    window.removeEventListener("scroll", schedule);
+    cancelAnimationFrame(frame);
+    delete page.dataset.motion;
+  };
+}
+
 export function LandingMotion() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const cleanups: Array<() => void> = [];
+    const scrollDriven = CSS.supports("animation-timeline: view()");
 
     const split = document.querySelector<HTMLElement>("[data-split]");
     if (split) {
@@ -72,33 +154,13 @@ export function LandingMotion() {
       cleanups.push(() => resize.disconnect());
     }
 
-    // Play-once fallback. With scroll timelines the split is scrubbed by scroll instead.
-    const scrollDriven = CSS.supports("animation-timeline: view()");
     const targets = [...document.querySelectorAll<HTMLElement>("[data-play]")].filter(
-      (el) => !(scrollDriven && el.hasAttribute("data-split")),
+      (el) => !(scrollDriven && el.hasAttribute("data-scrub")),
     );
-    const arrive = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          (entry.target as HTMLElement).dataset.play = "on";
-          arrive.unobserve(entry.target);
-        }
-      },
-      { threshold: 0.55 },
-    );
-    for (const el of targets) {
-      // Only what hasn't been seen yet: anything already 30% on screen (or above) is left alone.
-      const box = layoutBox(el, null);
-      if (box.y - window.scrollY < window.innerHeight - box.h * 0.3) continue;
-      el.dataset.play = "armed";
-      arrive.observe(el);
-    }
-    cleanups.push(() => {
-      arrive.disconnect();
-      // Never leave anything hidden behind: unplayed moments fall back to their final state.
-      for (const el of targets) if (el.dataset.play === "armed") el.dataset.play = "";
-    });
+    cleanups.push(playOnArrival(targets));
+
+    const page = document.querySelector<HTMLElement>(".lp-page");
+    if (page && !scrollDriven) cleanups.push(parallax(page));
 
     return () => cleanups.forEach((fn) => fn());
   }, []);
