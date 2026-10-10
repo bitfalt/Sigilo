@@ -11,7 +11,7 @@
 | Hard deadline | **2026-10-14 03:59 UTC** (Oct 13, 21:59 UTC-6). Target submission: Oct 13, 18:00 UTC-6 |
 | Network | Monad testnet (chain ID `10143`) |
 | Team | Solo |
-| Production domain | **TBD** (a subdomain of the founder's domain). Must be fixed before any passkey is created (passkeys bind to the rpId) |
+| Production domain | **`sigilo.work`** (passkey rpId; *"sigilo.work, the original proof of work"*). Hosted on Vercel. Never change it once testers sign up |
 
 ---
 
@@ -294,6 +294,8 @@ Cost estimate: N × (D_RUN + D_REG + 2) ≈ 78 Poseidon2 hashes. That should pro
 | `POST /api/relay` | Validates and submits worker-signed actions with the operator key: `SigiloPay.collect/sendHome`, `AdvanceVault.requestAdvance`. Rate-limited per session |
 | `POST /api/mandates` | Store signed deduction mandates (F7) |
 | `POST /api/cre/payroll-due` | P2: called by the CRE workflow (signed) |
+
+**Auth:** custom JWT. The worker signs a server challenge with their Mera EVM key; Convex verifies it and issues a short-lived ES256 session token (JWKS served from a Convex HTTP action), so `ctx.auth` identifies the account. No Convex Auth passkeys: Mera is the entire account layer. Server-only writes use `internal` functions.
 
 **Storage: Convex.** Tables: `employers`, `employees` (payment profile, payslip pubkey, EVM address, commitment), `invites`, `payrollRuns`, `receipts` (ciphertext only), `registryLeaves`, `verificationRequests`, `verifications`, `mandates`, `advances` (cache of on-chain state). Live queries drive the run status, the lender's "Verified" screen and the split-screen moment. Route handlers that need Node SDKs (mppx, the viem relayer, bb.js verification) stay in Next and use the Convex client.
 
