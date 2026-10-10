@@ -2,12 +2,12 @@
 
 // Employer dashboard (SPEC.md F2, F3, blind server): the admin's passkey holds the treasury and the
 // roster key; names and salaries are decrypted and payroll is built only in this browser.
-// Unstyled until the UI pass.
+// This file holds the data flow; the views it renders are props-only (see dev-preview/employer).
 
 import { fieldToHex, randomField } from "@sigilo/core/field";
 import { decryptRosterEntry, encryptRosterEntry, newInviteCode } from "@sigilo/core/roster";
 import { useAction, useConvexAuth, useMutation, useQuery } from "convex/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useKeys, useSigilo } from "@/components/sigilo-provider";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,12 @@ import { saveIdentity, useKnownIdentity } from "@/lib/public-identity";
 import { formatCents, formatUsd } from "@/lib/wallet";
 
 import { api } from "../../../convex/_generated/api";
+import { DashboardView } from "./dashboard-view";
+import { ConsoleNotice, secondaryPill } from "./parts";
+import { type PeriodOption, PayrollEnvelope, type RunEntry } from "./payroll-envelope";
+import { AddPersonForm, type TeamMember, TeamRegister } from "./team-register";
+import { TreasuryCard } from "./treasury-card";
+import { UnlockView } from "./unlock-view";
 
 export function EmployerConsole() {
   const keys = useKeys("employer");
@@ -71,47 +77,18 @@ function EmployerUnlock({ onCreate }: { onCreate(name: string): void }) {
   const signingIn = known && mode === "auto";
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        {signingIn
-          ? `Welcome back${known.displayName ? `, ${known.displayName}` : ""}`
-          : "Sigilo for employers"}
-      </h1>
-      {signingIn ? (
-        <>
-          <Button size="lg" onClick={() => open("known")} disabled={busy}>
-            {busy ? "Opening your company…" : "Sign in with passkey"}
-          </Button>
-          <button className="text-sm underline" onClick={() => setMode("create")} disabled={busy}>
-            Create another company
-          </button>
-        </>
-      ) : (
-        <>
-          <p className="text-muted-foreground text-sm">
-            Create your company account. It&apos;s secured with a passkey, so there&apos;s no
-            password, and your team&apos;s salaries stay private, even from us.
-          </p>
-          <input
-            className="rounded-md border px-3 py-2 text-sm"
-            placeholder="Company name"
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-          />
-          <Button
-            size="lg"
-            onClick={() => open("create")}
-            disabled={busy || company.trim().length < 2}
-          >
-            {busy ? "Creating your company…" : "Create company account"}
-          </Button>
-          <button className="text-sm underline" onClick={() => open("any")} disabled={busy}>
-            Sign in with a passkey
-          </button>
-        </>
-      )}
-      {error && <p className="text-destructive text-sm">{error}</p>}
-    </main>
+    <UnlockView
+      mode={signingIn ? "welcome" : "create"}
+      {...(signingIn && known.displayName ? { knownName: known.displayName } : {})}
+      company={company}
+      onCompanyChange={setCompany}
+      busy={busy}
+      error={error}
+      onCreate={() => open("create")}
+      onSignInKnown={() => open("known")}
+      onSignInAny={() => open("any")}
+      onCreateAnother={() => setMode("create")}
+    />
   );
 }
 
@@ -133,37 +110,31 @@ function EmployerDashboard({
     }
   }, [employer, pendingName, register]);
 
-  if (employer === undefined) return <p className="p-10 text-sm">Opening your company…</p>;
+  if (employer === undefined) return <ConsoleNotice busy>Opening your company…</ConsoleNotice>;
   if (employer === null) {
     return (
-      <main className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-sm">
-        <p>{pendingName ? "Creating your company…" : "No company found for this passkey."}</p>
-        <Button variant="ghost" onClick={lock}>
-          Lock
-        </Button>
-      </main>
+      <ConsoleNotice
+        busy={Boolean(pendingName)}
+        action={
+          <Button variant="outline" onClick={lock} className={secondaryPill}>
+            Lock
+          </Button>
+        }
+      >
+        {pendingName ? "Creating your company…" : "No company found for this passkey."}
+      </ConsoleNotice>
     );
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-10">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{employer.name}</h1>
-          <p className="text-muted-foreground text-sm">
-            {employer.verified
-              ? "Verified employer"
-              : "Verification pending: payroll works, but won't count toward Income Passports yet."}
-          </p>
-        </div>
-        <Button variant="ghost" onClick={lock}>
-          Lock
-        </Button>
-      </header>
-      <Treasury address={keys.address} />
-      <Employees keys={keys} employerId={employer.employerId} />
-      <Payroll keys={keys} employer={employer} />
-    </main>
+    <DashboardView
+      name={employer.name}
+      verified={employer.verified}
+      onLock={lock}
+      treasury={<Treasury address={keys.address} />}
+      team={<Employees keys={keys} employerId={employer.employerId} />}
+      payroll={<Payroll keys={keys} employer={employer} />}
+    />
   );
 }
 
@@ -206,66 +177,13 @@ function Treasury({ address }: { address: `0x${string}` }) {
   }
 
   return (
-    <section className="flex items-end justify-between rounded-lg border p-4">
-      <div>
-        <p className="text-muted-foreground text-sm">Payroll balance</p>
-        <p className="text-2xl font-semibold">{balance ? formatUsd(balance.ausd) : "…"}</p>
-        <p className="text-muted-foreground text-xs">Digital dollars (AUSD)</p>
-      </div>
-      <div className="flex flex-col items-end gap-1">
-        <Button variant="outline" onClick={addFunds} disabled={busy}>
-          {busy ? "Adding funds…" : "Add test funds"}
-        </Button>
-        {message && <p className="text-muted-foreground text-xs">{message}</p>}
-      </div>
-    </section>
-  );
-}
-
-function inviteUrl(code: string): string {
-  return `${window.location.origin}/app/invite/${code}`;
-}
-
-/** Copy (and, on phones, share) an invite link. */
-function InviteActions({ code, name }: { code: string; name: string }) {
-  const [copied, setCopied] = useState(false);
-  const [showLink, setShowLink] = useState(false);
-  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
-
-  async function copy() {
-    try {
-      await navigator.clipboard.writeText(inviteUrl(code));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setShowLink(true); // Clipboard blocked: show the link to copy by hand.
-    }
-  }
-
-  return (
-    <span className="flex flex-wrap items-center gap-2">
-      {showLink && <code className="text-xs break-all">{inviteUrl(code)}</code>}
-      <Button size="sm" variant="outline" onClick={copy}>
-        {copied ? "Copied" : "Copy invite link"}
-      </Button>
-      {canShare && (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() =>
-            navigator
-              .share({
-                title: "Join your team on Sigilo",
-                text: `${name}, get paid with Sigilo`,
-                url: inviteUrl(code),
-              })
-              .catch(() => {})
-          }
-        >
-          Share
-        </Button>
-      )}
-    </span>
+    <TreasuryCard
+      balance={balance ? formatUsd(balance.ausd) : null}
+      empty={balance?.ausd === 0n}
+      busy={busy}
+      message={message}
+      onAddFunds={addFunds}
+    />
   );
 }
 
@@ -304,68 +222,30 @@ function Employees({ keys, employerId }: { keys: EmployerKeys; employerId: strin
     }
   }
 
-  return (
-    <section className="flex flex-col gap-3">
-      <h2 className="font-medium">Team</h2>
-      <div className="flex flex-col divide-y rounded-lg border">
-        {(roster ?? []).map((row) => {
-          const entry = decryptRosterEntry(row.roster, keys.rosterKey, employerId);
-          const status =
-            row.status === "active"
-              ? row.passportCommitment
-                ? "Joined, Income Passport active"
-                : "Joined"
-              : "Invite sent";
-          return (
-            <div
-              key={row._id}
-              className="flex flex-col gap-2 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div>
-                <p className="font-medium">{entry.name}</p>
-                <p className="text-muted-foreground">
-                  {formatCents(entry.monthlySalaryCents)} a month. {status}.
-                </p>
-              </div>
-              {row.status === "invited" && entry.inviteCode && (
-                <InviteActions code={entry.inviteCode} name={entry.name} />
-              )}
-            </div>
-          );
-        })}
-        {roster?.length === 0 && (
-          <p className="text-muted-foreground p-3 text-sm">
-            Add someone below to create their invite link.
-          </p>
-        )}
-      </div>
+  const members: TeamMember[] | undefined = roster?.map((row) => {
+    const entry = decryptRosterEntry(row.roster, keys.rosterKey, employerId);
+    return {
+      id: row._id,
+      name: entry.name,
+      salary: formatCents(entry.monthlySalaryCents),
+      status:
+        row.status === "active" ? (row.passportCommitment ? "passport" : "joined") : "invited",
+      ...(entry.inviteCode ? { inviteCode: entry.inviteCode } : {}),
+    };
+  });
 
-      <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-end">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          Name
-          <input
-            className="rounded-md border px-3 py-2"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            autoComplete="off"
-          />
-        </label>
-        <label className="flex flex-col gap-1 text-sm sm:w-44">
-          Monthly salary (USD)
-          <input
-            className="rounded-md border px-3 py-2"
-            inputMode="decimal"
-            placeholder="2400"
-            value={salary}
-            onChange={(e) => setSalary(e.target.value)}
-          />
-        </label>
-        <Button onClick={addEmployee} disabled={busy}>
-          {busy ? "Adding…" : "Add and create invite"}
-        </Button>
-      </div>
-      {error && <p className="text-destructive text-sm">{error}</p>}
-    </section>
+  return (
+    <TeamRegister members={members}>
+      <AddPersonForm
+        name={name}
+        salary={salary}
+        onNameChange={setName}
+        onSalaryChange={setSalary}
+        onSubmit={addEmployee}
+        busy={busy}
+        error={error}
+      />
+    </TeamRegister>
   );
 }
 
@@ -407,58 +287,53 @@ function Payroll({
     }
   }
 
-  const stepCopy: Record<PayrollStep, string> = {
-    preparing: "Preparing private payslips…",
-    approving: "Authorizing the payroll payment…",
-    paying: "Paying your team privately…",
-    recording: "Recording payslips…",
-    done: "Payroll sent.",
-  };
+  // Who this run would pay: the same people runPayroll pays (joined, with an account).
+  const summary = useMemo(() => {
+    if (!roster) return undefined;
+    const payable = roster.filter((row) => row.status === "active" && row.account);
+    const cents = payable.reduce(
+      (sum, row) =>
+        sum +
+        decryptRosterEntry(row.roster, keys.rosterKey, employer.employerId).monthlySalaryCents,
+      0,
+    );
+    return {
+      people: payable.length,
+      total: formatCents(cents),
+      waiting: roster.filter((row) => row.status === "invited").length,
+    };
+  }, [roster, keys.rosterKey, employer.employerId]);
+
+  const paidPeriods = new Set(
+    (runs ?? [])
+      .filter((run) => run.status === "done" || run.status === "committing" || run.payoutTxHash)
+      .map((run) => run.period),
+  );
+
+  const periods: PeriodOption[] = recentPeriods(4).map((p) => {
+    const label = periodLabel(p);
+    const [month = label, year = ""] = label.split(" ");
+    return { value: p, label, month, year, paid: paidPeriods.has(p) };
+  });
+
+  const entries: RunEntry[] | undefined = runs?.map((run) => ({
+    id: run._id,
+    period: periodLabel(run.period),
+    total: run.payoutTxHash ? formatCents(run.totalNetCents) : null,
+    status: run.status,
+    paymentUrl: run.payoutTxHash ? `${EXPLORER_URL}/tx/${run.payoutTxHash}` : null,
+  }));
 
   return (
-    <section className="flex flex-col gap-3">
-      <h2 className="font-medium">Payroll</h2>
-      <div className="flex items-center gap-2">
-        <select
-          className="rounded-md border px-3 py-2 text-sm"
-          value={period}
-          onChange={(e) => setPeriod(Number(e.target.value))}
-        >
-          {recentPeriods(4).map((p) => (
-            <option key={p} value={p}>
-              {periodLabel(p)}
-            </option>
-          ))}
-        </select>
-        <Button onClick={pay} disabled={step !== null && step !== "done"}>
-          Run payroll
-        </Button>
-        {step && <span className="text-muted-foreground text-sm">{stepCopy[step]}</span>}
-      </div>
-      {error && <p className="text-destructive text-sm">{error}</p>}
-      <div className="flex flex-col divide-y rounded-lg border">
-        {(runs ?? []).map((run) => (
-          <div key={run._id} className="flex justify-between p-3 text-sm">
-            <span>{periodLabel(run.period)}</span>
-            <span className="text-muted-foreground">
-              {formatCents(run.totalNetCents)} · {run.status}
-              {run.payoutTxHash && (
-                <>
-                  {" · "}
-                  <a
-                    className="underline"
-                    href={`${EXPLORER_URL}/tx/${run.payoutTxHash}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    View payment
-                  </a>
-                </>
-              )}
-            </span>
-          </div>
-        ))}
-      </div>
-    </section>
+    <PayrollEnvelope
+      periods={periods}
+      period={period}
+      onPeriodChange={setPeriod}
+      summary={summary}
+      step={step}
+      error={error}
+      onRun={pay}
+      runs={entries}
+    />
   );
 }
