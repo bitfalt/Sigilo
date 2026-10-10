@@ -46,6 +46,42 @@ export function WaxSeal({ className = "" }: { className?: string }) {
   );
 }
 
+// A jagged crack down the seal. The polygons reach past the box so the ring and shadow survive.
+const CRACK = "49% 22%, 57% 46%, 46% 70%, 52% 125%";
+const LEFT_HALF = `polygon(-25% -25%, 56% -25%, ${CRACK}, -25% 125%)`;
+const RIGHT_HALF = `polygon(56% -25%, 125% -25%, 125% 125%, ${CRACK.split(", ").reverse().join(", ")})`;
+
+/**
+ * The wax seal, whole or broken in two: Advanced settings break it once the passkey confirms,
+ * because what happens past that point is outside Sigilo's protection.
+ */
+export function SealBreak({ broken, className = "" }: { broken: boolean; className?: string }) {
+  const half =
+    "bg-primary text-primary-foreground ring-card absolute inset-0 flex items-center justify-center rounded-full shadow-[0_6px_14px_-6px_rgba(42,60,176,0.7)] ring-4 transition-transform duration-700 ease-[cubic-bezier(.2,.9,.25,1.15)] motion-reduce:transition-none";
+  return (
+    <span aria-hidden="true" className={`relative inline-block -rotate-12 ${className}`}>
+      <span
+        className={half}
+        style={{
+          clipPath: LEFT_HALF,
+          transform: broken ? "translate(-14%, 6%) rotate(-16deg)" : undefined,
+        }}
+      >
+        <SealMark className="size-[68%]" />
+      </span>
+      <span
+        className={half}
+        style={{
+          clipPath: RIGHT_HALF,
+          transform: broken ? "translate(12%, -4%) rotate(11deg)" : undefined,
+        }}
+      >
+        <SealMark className="size-[68%]" />
+      </span>
+    </span>
+  );
+}
+
 // Fine guilloche lines that fill the envelope flap (viewBox 400 x 80, stretched to fit).
 const flapLines = Array.from({ length: 16 }, (_, j) => {
   const phase = (j / 16) * TAU * 3;
