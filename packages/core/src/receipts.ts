@@ -43,8 +43,11 @@ export interface PayslipReceipt {
   token: "AUSD";
   pieces: ReceiptPiece[];
   payoutTxHash: Hex;
-  /** Everything the Income Passport needs for this period (core/passport.ts). */
-  commitment: {
+  /**
+   * Everything the Income Passport needs for this period (core/passport.ts). Absent when the
+   * worker had not activated their passport before the run.
+   */
+  commitment?: {
     salt: Hex;
     runRoot: Hex;
     runPath: { siblings: Hex[]; isRight: boolean[] };
@@ -133,6 +136,7 @@ export function decryptReceipt(envelope: string, secretKey: Uint8Array): Receipt
 
 /** What `buildPassportInputs` needs from a payslip. */
 export function payslipToPassportPayslip(r: PayslipReceipt): PassportPayslip {
+  if (!r.commitment) throw new Error(`payslip ${r.period} has no passport commitment`);
   const runPath: MerklePath = {
     siblings: r.commitment.runPath.siblings.map(BigInt),
     isRight: r.commitment.runPath.isRight,

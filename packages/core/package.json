@@ -18,7 +18,9 @@
     "./pieces": "./src/pieces.ts",
     "./intent": "./src/intent.ts",
     "./deployments": "./src/deployments.ts",
-    "./receipts": "./src/receipts.ts"
+    "./receipts": "./src/receipts.ts",
+    "./payroll": "./src/payroll.ts",
+    "./roster": "./src/roster.ts"
   },
   "scripts": {
     "test": "vitest run",

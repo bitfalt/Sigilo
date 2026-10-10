@@ -21,6 +21,8 @@ const utf8 = (s: string) => new TextEncoder().encode(s);
 export const SALT_ACCOUNT = sha256(utf8("sigilo/account/v1"));
 /** PRF salt (namespace) evaluated only on step-up (share passport, accept advance). */
 export const SALT_PASSPORT = sha256(utf8("sigilo/passport/v1"));
+/** PRF salt (namespace) for employer admins: treasury account and roster key. */
+export const SALT_EMPLOYER = sha256(utf8("sigilo/employer/v1"));
 
 export const EVM_DERIVATION_PATH = "m/44'/60'/0'/0/0";
 
@@ -29,6 +31,8 @@ const LABEL_STEALTH_SPEND = "sigilo/stealth-spend/v1";
 const LABEL_STEALTH_VIEW = "sigilo/stealth-view/v1";
 const LABEL_PAYSLIPS = "sigilo/payslips/v1";
 const LABEL_PASSPORT_SECRET = "sigilo/passport-secret/v1";
+const LABEL_EMPLOYER_TREASURY = "sigilo/employer-treasury/v1";
+const LABEL_EMPLOYER_ROSTER = "sigilo/employer-roster/v1";
 
 function assertPrf(prf: Uint8Array): void {
   if (prf.length !== 32) throw new Error(`expected a 32-byte PRF output, got ${prf.length}`);
@@ -84,5 +88,20 @@ export function deriveAccountKeys(prfAccount: Uint8Array) {
     evmPrivateKey: deriveEvmPrivateKey(prfAccount),
     stealth: deriveStealthKeys(prfAccount),
     payslip: derivePayslipKeypair(prfAccount),
+  };
+}
+
+/**
+ * Everything derivable from the EMPLOYER namespace (one prompt): the treasury account that pays
+ * payroll, and the symmetric key the roster is encrypted with (SPEC.md §6, "blind server").
+ */
+export function deriveEmployerKeys(prfEmployer: Uint8Array): {
+  treasuryKey: Uint8Array;
+  rosterKey: Uint8Array;
+} {
+  assertPrf(prfEmployer);
+  return {
+    treasuryKey: deriveSecp256k1Scalar(prfEmployer, LABEL_EMPLOYER_TREASURY),
+    rosterKey: hkdf(sha256, prfEmployer, undefined, utf8(LABEL_EMPLOYER_ROSTER), 32),
   };
 }
