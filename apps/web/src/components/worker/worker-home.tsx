@@ -20,7 +20,8 @@ export function WorkerHome() {
   return keys ? <WorkerDashboard keys={keys} /> : <WorkerUnlock />;
 }
 
-function WorkerUnlock() {
+/** Sign in or create an account; shown wherever an unlocked worker account is needed. */
+export function WorkerUnlock() {
   const { known, create, signIn } = useWorkerAccess();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
@@ -82,7 +83,18 @@ function WorkerDashboard({ keys }: { keys: WorkerKeys }) {
       )
     : null;
 
+  const transfers = wallet
+    ? wallet.receipts.flatMap(({ id, receipt }) =>
+        receipt.kind === "transfer" ? [{ id, receipt }] : [],
+      )
+    : [];
+
   return (
-    <DashboardView balance={wallet ? wallet.balance : null} payslips={payslips} onLock={lock} />
+    <DashboardView
+      balance={wallet ? wallet.balance : null}
+      payslips={payslips}
+      transfers={transfers}
+      onLock={lock}
+    />
   );
 }

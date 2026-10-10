@@ -4,8 +4,8 @@
 // month, net amount) that opens into the payslip itself, decrypted on this device.
 
 import { periodFromIndex } from "@sigilo/core/period";
-import type { PayslipReceipt } from "@sigilo/core/receipts";
-import { Check, ChevronDown, Share } from "lucide-react";
+import type { PayslipReceipt, TransferReceipt } from "@sigilo/core/receipts";
+import { Check, ChevronDown, HandCoins, Share } from "lucide-react";
 import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -17,8 +17,28 @@ export interface PayslipEntry {
   receipt: PayslipReceipt;
 }
 
+export interface TransferEntry {
+  id: string;
+  receipt: TransferReceipt;
+}
+
 /** `payslips` is null while the payslips are being opened. */
-export function PayslipLedger({ payslips }: { payslips: PayslipEntry[] | null }) {
+export function PayslipLedger({
+  payslips,
+  transfers = [],
+}: {
+  payslips: PayslipEntry[] | null;
+  /** Money sent to this person by family (Send home). */
+  transfers?: TransferEntry[];
+}) {
+  if (transfers.length > 0) {
+    return (
+      <div className="flex flex-col gap-10">
+        <ReceivedLedger transfers={transfers} />
+        {payslips && payslips.length > 0 && <PayslipLedger payslips={payslips} />}
+      </div>
+    );
+  }
   return (
     <section aria-labelledby="payslips-title">
       <h2 id="payslips-title" className="font-wide text-xl">
@@ -175,5 +195,50 @@ function EmptyPayslips() {
         {copied ? "Link copied" : "Invite your employer"}
       </Button>
     </div>
+  );
+}
+
+/** Money received from family, newest first: who sent it, when, and how much. */
+function ReceivedLedger({ transfers }: { transfers: TransferEntry[] }) {
+  return (
+    <section aria-labelledby="received-title">
+      <h2 id="received-title" className="font-wide text-xl">
+        Money received
+      </h2>
+      <ul className="border-foreground/15 mt-4 border-t">
+        {transfers.map(({ id, receipt }) => {
+          const when = new Date(receipt.issuedAt);
+          const total = receipt.pieces.reduce((sum, p) => sum + BigInt(p.amount), 0n);
+          // CTK has 18 decimals, AUSD 6; both are shown in dollars.
+          const cents = total / 10n ** (receipt.token === "CTK" ? 16n : 4n);
+          return (
+            <li
+              key={id}
+              className="border-foreground/15 grid min-h-16 grid-cols-[3rem_1fr_auto] items-center gap-x-3 border-b py-3.5"
+            >
+              <span className="leading-none" aria-hidden="true">
+                <span className="font-wide block text-[1.0625rem]">
+                  {when.toLocaleString("en-US", { month: "short" })}
+                </span>
+                <span className="text-muted-foreground mt-1 block text-xs tabular-nums">
+                  {when.getDate()}
+                </span>
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <HandCoins aria-hidden="true" className="text-primary size-4" />
+                  Money from {receipt.from || "family"}
+                </span>
+                <span className="text-muted-foreground block truncate text-sm">
+                  {receipt.memo ?? "Arrived in your account"}
+                  <span className="sr-only">, {when.toLocaleDateString("en-US")}</span>
+                </span>
+              </span>
+              <span className="font-wide text-[1.0625rem] tabular-nums">{formatCents(cents)}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }

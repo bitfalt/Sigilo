@@ -16,6 +16,7 @@ import {
   type Hex,
   http,
   type LocalAccount,
+  parseAbi,
 } from "viem";
 import { monadTestnet } from "viem/chains";
 
@@ -33,11 +34,19 @@ const LOW_BALANCE_SPACING_MS = 1_500;
 const transient = (e: unknown) => /insufficient balance|reserve|rate|nonce/i.test(String(e));
 
 /** AUSD balances (base units) of many accounts in one Multicall3 round trip. */
-export async function ausdBalances(accounts: readonly Address[]): Promise<bigint[]> {
+export function ausdBalances(accounts: readonly Address[]): Promise<bigint[]> {
+  return tokenBalances(AGORA_TESTNET.ausd, accounts);
+}
+
+/** ERC-20 balances (base units) of many accounts in one Multicall3 round trip. */
+export async function tokenBalances(
+  token: Address,
+  accounts: readonly Address[],
+): Promise<bigint[]> {
   if (accounts.length === 0) return [];
   const results = await publicClient.multicall({
     contracts: accounts.map((a) => ({
-      address: AGORA_TESTNET.ausd,
+      address: token,
       abi: erc20Abi,
       functionName: "balanceOf" as const,
       args: [a] as const,
@@ -66,4 +75,19 @@ export async function writeContract(
       await sleep(800 * (attempt + 1));
     }
   }
+}
+
+const pairAbi = parseAbi([
+  "function getAmountsOut(uint256 amountIn, address[] path) view returns (uint256[])",
+]);
+
+/** CTK the Agora pair pays for `ausd` AUSD (base units both ways). */
+export async function quoteCtk(ausd: bigint): Promise<bigint> {
+  const amounts = await publicClient.readContract({
+    address: AGORA_TESTNET.ctkAusdPair,
+    abi: pairAbi,
+    functionName: "getAmountsOut",
+    args: [ausd, [AGORA_TESTNET.ausd, AGORA_TESTNET.ctk]],
+  });
+  return amounts[amounts.length - 1]!;
 }

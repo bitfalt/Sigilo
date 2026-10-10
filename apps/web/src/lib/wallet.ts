@@ -2,11 +2,12 @@
 // receipt, re-derive every one-time account it names, and read all balances in one multicall.
 // The worker sees one number; the pieces stay internal.
 
+import { AGORA_TESTNET } from "@sigilo/core/constants";
 import { decryptReceipt, type Receipt } from "@sigilo/core/receipts";
 import { oneTimeAccountKey } from "@sigilo/core/stealth";
 import type { Address, Hex } from "viem";
 
-import { ausdBalances } from "./chain";
+import { tokenBalances } from "./chain";
 import type { WorkerKeys } from "./identity";
 
 export interface StoredReceipt {
@@ -18,22 +19,28 @@ export interface StoredReceipt {
 export interface OwnedPiece {
   account: Address;
   privateKey: Hex;
+  token: "AUSD" | "CTK";
+  /** Token base units (AUSD 6 decimals, CTK 18). */
   balance: bigint;
 }
 
 export interface Wallet {
-  /** AUSD base units across every piece. */
+  /** Everything the person holds, in AUSD base units (CTK counts 1:1, as Agora prices it). */
   balance: bigint;
+  /** What can be spent with Sigilo today: AUSD pieces. */
+  spendable: bigint;
   pieces: OwnedPiece[];
   receipts: { id: string; createdAt: number; receipt: Receipt }[];
 }
+
+const CTK_TO_AUSD = 10n ** 12n;
 
 export async function loadWallet(
   stored: readonly StoredReceipt[],
   keys: WorkerKeys,
 ): Promise<Wallet> {
   const receipts: Wallet["receipts"] = [];
-  const owned = new Map<Address, Hex>();
+  const owned = new Map<Address, { privateKey: Hex; token: OwnedPiece["token"] }>();
   for (const row of stored) {
     let receipt: Receipt;
     try {
@@ -42,21 +49,34 @@ export async function loadWallet(
       continue; // Not ours or corrupted: ignore rather than break the wallet.
     }
     receipts.push({ id: row._id, createdAt: row._creationTime, receipt });
-    if (receipt.token !== "AUSD") continue;
+    const token = receipt.kind === "payslip" ? "AUSD" : receipt.token;
     for (const piece of receipt.pieces) {
       const key = oneTimeAccountKey(keys.stealth, piece.ephemeralPubKey as Hex);
-      if (key.address === piece.account) owned.set(key.address, key.privateKey);
+      if (key.address === piece.account)
+        owned.set(key.address, { privateKey: key.privateKey, token });
     }
   }
 
-  const accounts = [...owned.keys()];
-  const balances = await ausdBalances(accounts);
-  const pieces = accounts.map((account, i) => ({
-    account,
-    privateKey: owned.get(account)!,
-    balance: balances[i]!,
-  }));
-  return { balance: balances.reduce((a, b) => a + b, 0n), pieces, receipts };
+  const entries = [...owned.entries()];
+  const byToken = (t: OwnedPiece["token"]) => entries.filter(([, v]) => v.token === t);
+  const [ausd, ctk] = [byToken("AUSD"), byToken("CTK")];
+  const [ausdBal, ctkBal] = await Promise.all([
+    tokenBalances(
+      AGORA_TESTNET.ausd,
+      ausd.map(([a]) => a),
+    ),
+    tokenBalances(
+      AGORA_TESTNET.ctk,
+      ctk.map(([a]) => a),
+    ),
+  ]);
+  const pieces: OwnedPiece[] = [
+    ...ausd.map(([account, v], i) => ({ account, ...v, balance: ausdBal[i]! })),
+    ...ctk.map(([account, v], i) => ({ account, ...v, balance: ctkBal[i]! })),
+  ];
+  const spendable = ausdBal.reduce((a, b) => a + b, 0n);
+  const received = ctkBal.reduce((a, b) => a + b, 0n) / CTK_TO_AUSD;
+  return { balance: spendable + received, spendable, pieces, receipts };
 }
 
 /** "$2,400.00" from AUSD base units (6 decimals). */

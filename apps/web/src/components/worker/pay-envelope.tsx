@@ -65,7 +65,13 @@ export function PayEnvelope({ balance }: { balance: bigint | null }) {
           Send home
         </Link>
         <p className="text-muted-foreground mt-2.5 text-center text-xs">
-          To family abroad, delivered in seconds.
+          To family abroad, delivered in seconds.{" "}
+          <Link
+            href="/app/receive"
+            className="text-foreground rounded-sm font-medium underline decoration-[1.5px] underline-offset-4"
+          >
+            Get money from family
+          </Link>
         </p>
       </div>
     </section>

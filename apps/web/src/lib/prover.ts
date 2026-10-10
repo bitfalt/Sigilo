@@ -26,7 +26,8 @@ export async function provePassport(inputs: PassportCircuitInputs): Promise<Pass
   const noir = new Noir(compiled as ConstructorParameters<typeof Noir>[0]);
   const { witness } = await noir.execute(inputs as unknown as Parameters<typeof noir.execute>[0]);
 
-  const threads = typeof navigator !== "undefined" ? Math.min(navigator.hardwareConcurrency || 1, 8) : 1;
+  const threads =
+    typeof navigator !== "undefined" ? Math.min(navigator.hardwareConcurrency || 1, 8) : 1;
   const api = await Barretenberg.new({ threads });
   try {
     const backend = new UltraHonkBackend((compiled as { bytecode: string }).bytecode, api);

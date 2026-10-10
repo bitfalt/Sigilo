@@ -10,7 +10,11 @@ import { AppShell, Perforation } from "@/components/app/app-shell";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PayEnvelope } from "@/components/worker/pay-envelope";
-import { type PayslipEntry, PayslipLedger } from "@/components/worker/payslip-ledger";
+import {
+  type PayslipEntry,
+  PayslipLedger,
+  type TransferEntry,
+} from "@/components/worker/payslip-ledger";
 import { PassportStamp, Rosette, WaxSeal } from "@/components/worker/worker-art";
 import { cn } from "@/lib/utils";
 
@@ -181,12 +185,14 @@ export function UnlockView(props: UnlockViewProps) {
 export function DashboardView({
   balance,
   payslips,
+  transfers,
   onLock,
 }: {
   /** AUSD base units; null while the balance is being counted. */
   balance: bigint | null;
   /** null while the payslips are being opened. */
   payslips: PayslipEntry[] | null;
+  transfers?: TransferEntry[];
   onLock(): void;
 }) {
   return (
@@ -211,7 +217,7 @@ export function DashboardView({
           </div>
         </div>
         <div className="lg:col-span-7 lg:pt-2">
-          <PayslipLedger payslips={payslips} />
+          <PayslipLedger payslips={payslips} transfers={transfers} />
         </div>
       </div>
     </AppShell>
