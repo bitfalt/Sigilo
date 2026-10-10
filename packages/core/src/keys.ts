@@ -3,7 +3,9 @@
 // WARNING: every label below is part of the account identity. Changing a label or the
 // derivation path silently produces different keys and orphans existing accounts.
 
+import { mapHashToField } from "@noble/curves/abstract/modular.js";
 import { x25519 } from "@noble/curves/ed25519.js";
+import { secp256k1 } from "@noble/curves/secp256k1.js";
 import { hkdf } from "@noble/hashes/hkdf.js";
 import { sha256 } from "@noble/hashes/sha2.js";
 import { bytesToHex } from "@noble/hashes/utils.js";
@@ -22,7 +24,9 @@ export const SALT_PASSPORT = sha256(utf8("sigilo/passport/v1"));
 
 export const EVM_DERIVATION_PATH = "m/44'/60'/0'/0/0";
 
-const LABEL_UNLINK = "sigilo/unlink/v1";
+// Retired (Unlink was removed): "sigilo/unlink/v1". Never reuse a retired label.
+const LABEL_STEALTH_SPEND = "sigilo/stealth-spend/v1";
+const LABEL_STEALTH_VIEW = "sigilo/stealth-view/v1";
 const LABEL_PAYSLIPS = "sigilo/payslips/v1";
 const LABEL_PASSPORT_SECRET = "sigilo/passport-secret/v1";
 
@@ -39,10 +43,22 @@ export function deriveEvmPrivateKey(prfAccount: Uint8Array): Uint8Array {
   return node.privateKey;
 }
 
-/** 64-byte seed for Unlink `account.fromSeed` (seed-backed accounts support `execute`). */
-export function deriveUnlinkSeed(prfAccount: Uint8Array): Uint8Array {
+/** secp256k1 scalar in [1, n): 48 HKDF bytes reduced without bias (RFC 9380 hash_to_field). */
+function deriveSecp256k1Scalar(prfAccount: Uint8Array, label: string): Uint8Array {
+  const wide = hkdf(sha256, prfAccount, undefined, utf8(label), 48);
+  return mapHashToField(wide, secp256k1.Point.Fn.ORDER);
+}
+
+/** Spend and view keys behind every one-time account (SPEC.md §6.1). */
+export function deriveStealthKeys(prfAccount: Uint8Array): {
+  spendKey: Uint8Array;
+  viewKey: Uint8Array;
+} {
   assertPrf(prfAccount);
-  return hkdf(sha256, prfAccount, undefined, utf8(LABEL_UNLINK), 64);
+  return {
+    spendKey: deriveSecp256k1Scalar(prfAccount, LABEL_STEALTH_SPEND),
+    viewKey: deriveSecp256k1Scalar(prfAccount, LABEL_STEALTH_VIEW),
+  };
 }
 
 /** X25519 keypair the employer encrypts payslips to. */
@@ -66,7 +82,7 @@ export function derivePassportSecret(prfPassport: Uint8Array): bigint {
 export function deriveAccountKeys(prfAccount: Uint8Array) {
   return {
     evmPrivateKey: deriveEvmPrivateKey(prfAccount),
-    unlinkSeed: deriveUnlinkSeed(prfAccount),
+    stealth: deriveStealthKeys(prfAccount),
     payslip: derivePayslipKeypair(prfAccount),
   };
 }

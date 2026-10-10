@@ -4,9 +4,6 @@
 export const MONAD_TESTNET_CHAIN_ID = 10143;
 export const MONAD_MAINNET_CHAIN_ID = 143;
 
-/** Unlink hosted environment for Monad testnet (mainnet requires an access grant). */
-export const UNLINK_ENVIRONMENT = "monad-testnet";
-
 /** BN254 scalar field modulus (Noir / UltraHonk field). */
 export const BN254_R =
   21888242871839275222246405745257275088548364400416034343698204186575808495617n;

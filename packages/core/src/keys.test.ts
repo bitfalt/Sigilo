@@ -34,11 +34,12 @@ describe("account namespace", () => {
     );
   });
 
-  test("Unlink seed is 64 pinned bytes", () => {
-    expect(keys.unlinkSeed).toHaveLength(64);
-    expect(bytesToHex(keys.unlinkSeed)).toBe(
-      "2134827c374525d5d4b9982fe69aa0d71ef5212f8f57d9ab1b873b47f738c966" +
-        "a041210f5cf62f1402e556751acf7e37afd3d3d1cff122af097eead30a002115",
+  test("stealth spend and view keys are pinned", () => {
+    expect(bytesToHex(keys.stealth.spendKey)).toBe(
+      "3f997e6aff2b445aa22f3823f978a82906e84ba94a91ea0ead7fb233587a5430",
+    );
+    expect(bytesToHex(keys.stealth.viewKey)).toBe(
+      "49e7b5bbc7ca13337bfaee8e6873bd2e511e370623d4b65b962e5a4225f8e052",
     );
   });
 
@@ -49,10 +50,13 @@ describe("account namespace", () => {
   });
 
   test("derived keys are independent of each other", () => {
-    const hex = [keys.evmPrivateKey, keys.unlinkSeed.slice(0, 32), keys.payslip.secretKey].map(
-      bytesToHex,
-    );
-    expect(new Set(hex).size).toBe(3);
+    const hex = [
+      keys.evmPrivateKey,
+      keys.stealth.spendKey,
+      keys.stealth.viewKey,
+      keys.payslip.secretKey,
+    ].map(bytesToHex);
+    expect(new Set(hex).size).toBe(4);
   });
 
   test("derivation is deterministic", () => {
