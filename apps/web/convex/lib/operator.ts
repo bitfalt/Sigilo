@@ -20,6 +20,10 @@ export const registryAbi = parseAbi([
   "function setEmployerVerified(bytes32 employerId, bool verified)",
 ]);
 
+const passportVerifierAbi = parseAbi([
+  "function verify(bytes proof, bytes32[] publicInputs) view returns (bool)",
+]);
+
 const sigiloPayAbi = parseAbi([
   "event Dispersed(address indexed payer, uint256 pieces, uint256 total)",
 ]);
@@ -70,4 +74,15 @@ export async function dispersedTotal(txHash: Hex, treasury: string): Promise<big
     }
   }
   return null;
+}
+
+/** IncomePassportVerifier.verify: a free view call (known registry root + valid proof). */
+export async function passportIsValid(proof: Hex, publicInputs: readonly Hex[]): Promise<boolean> {
+  const { publicClient } = clients();
+  return publicClient.readContract({
+    address: SIGILO_TESTNET.passportVerifier,
+    abi: passportVerifierAbi,
+    functionName: "verify",
+    args: [proof, publicInputs],
+  });
 }

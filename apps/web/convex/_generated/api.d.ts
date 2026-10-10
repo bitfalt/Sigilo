@@ -20,6 +20,7 @@ import type * as maintenance from "../maintenance.js";
 import type * as me from "../me.js";
 import type * as receipts from "../receipts.js";
 import type * as registry from "../registry.js";
+import type * as requests from "../requests.js";
 import type * as runs from "../runs.js";
 import type * as sessions from "../sessions.js";
 
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   me: typeof me;
   receipts: typeof receipts;
   registry: typeof registry;
+  requests: typeof requests;
   runs: typeof runs;
   sessions: typeof sessions;
 }>;
