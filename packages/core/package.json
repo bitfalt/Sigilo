@@ -21,7 +21,8 @@
     "./receipts": "./src/receipts.ts",
     "./payroll": "./src/payroll.ts",
     "./roster": "./src/roster.ts",
-    "./session": "./src/session.ts"
+    "./session": "./src/session.ts",
+    "./verify": "./src/verify.ts"
   },
   "scripts": {
     "test": "vitest run",

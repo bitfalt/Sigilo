@@ -14,3 +14,4 @@ export * from "./roster";
 export * from "./scope";
 export * from "./session";
 export * from "./stealth";
+export * from "./verify";
