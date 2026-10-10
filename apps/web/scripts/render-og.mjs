@@ -12,9 +12,13 @@ const bin =
   process.env.CHROME_BIN ??
   `${process.env.HOME}/Library/Caches/ms-playwright/chromium_headless_shell-1243/chrome-headless-shell-mac-arm64/chrome-headless-shell`;
 const profile = mkdtempSync(join(tmpdir(), "sigilo-og-"));
-const chrome = spawn(bin, ["--remote-debugging-port=9336", `--user-data-dir=${profile}`, "about:blank"], {
-  stdio: "ignore",
-});
+const chrome = spawn(
+  bin,
+  ["--remote-debugging-port=9336", `--user-data-dir=${profile}`, "about:blank"],
+  {
+    stdio: "ignore",
+  },
+);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 try {
@@ -40,13 +44,22 @@ try {
       ws.send(JSON.stringify({ id, method, params }));
     });
 
-  await send("Emulation.setDeviceMetricsOverride", { width: 1200, height: 630, deviceScaleFactor: 1, mobile: false });
+  await send("Emulation.setDeviceMetricsOverride", {
+    width: 1200,
+    height: 630,
+    deviceScaleFactor: 1,
+    mobile: false,
+  });
   // Static rosette (no draw-in animation) for the still image.
-  await send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: "reduce" }] });
+  await send("Emulation.setEmulatedMedia", {
+    features: [{ name: "prefers-reduced-motion", value: "reduce" }],
+  });
   await send("Page.enable");
   await send("Page.navigate", { url: `${base}/og-card` });
   await sleep(4000); // fonts and hydration
-  await send("Runtime.evaluate", { expression: "document.querySelector('nextjs-portal')?.remove()" });
+  await send("Runtime.evaluate", {
+    expression: "document.querySelector('nextjs-portal')?.remove()",
+  });
   const { data } = await send("Page.captureScreenshot", {
     format: "jpeg",
     quality: 88,
