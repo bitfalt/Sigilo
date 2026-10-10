@@ -43,13 +43,14 @@ Each smoke/e2e run moves 0.25 MON from the faucet to a test employer. Top up the
 
 ## Pending user actions
 
-1. **Vercel env (Production):** `OPERATOR_PRIVATE_KEY`, `LENDER_PRIVATE_KEY`, `MPP_SECRET_KEY` (values in the root `.env`). Without them `/api/v1/verify` and `/api/lender/verify` fail in prod. Optional: `MONAD_TESTNET_RPC_URL`.
-2. Decide: verify the prod company "Manolo" (`npx convex run --prod employers:verify '{"employer":"<id>"}'`) or create "Acme Labs" for the demo.
-3. One pass of the landing's scroll animation on the demo iPhone (Safari 18+ scroll timelines are untested here).
+1. Decide: turn on `AUTO_VERIFY_EMPLOYERS=true` in prod Convex (every new company verified automatically, so testers and judges get Income Passports), and verify the existing "Manolo" company.
+2. One pass of the landing's scroll animation on the demo iPhone (Safari 18+ scroll timelines are untested here).
+
+Done 2026-10-10: Vercel CLI is logged in and linked (`apps/web/.vercel`, team `bitfalt-c7c98f2c`, project `sigilo`). `OPERATOR_PRIVATE_KEY`, `LENDER_PRIVATE_KEY`, `MPP_SECRET_KEY` are set for Production and a paid call to `https://sigilo.work/api/v1/verify` settled on-chain. Add more with `printf %s "$VALUE" | vercel env add NAME production` (never echo the value), then `vercel redeploy <latest prod url> --target production`.
 
 ## Next steps
 
-1. Prod check after the env vars: run `pnpm e2e:passport https://sigilo.work` (spends testnet money) or click through `/lender` + `/v/...` on a phone.
+1. Prod walkthrough on real devices (iPhone + Mac): employer → invite → 3 paid months → lender check → advance → send home.
 2. Demo data on prod: a verified employer, María with 3 paid months, Mom's account.
 3. Landing redesign is merged (hero load sequence, parallax, scroll reveals, Income Passport / advance / send-home stories, privacy band, FAQ). Check scroll timelines on a real iPhone.
 4. Demo videos (Mera UX, Mera namespaces, Agora send home, MPP), bounty write-ups, 5+ testers. README is done.
