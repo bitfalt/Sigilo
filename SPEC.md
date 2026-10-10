@@ -196,7 +196,7 @@ Hidden behind **Settings → Advanced**, a passkey step-up and an explicit warni
 - Anonymity set = the employees paid in the same run. A one-person employer leaks that person's net pay. Multi-employer batched payouts (P2) and a shielded pool (roadmap) widen it.
 - Pieces are combined only when spent, never proactively.
 - Sigilo relays all worker actions, so it sees spend intents and could censor them. It cannot redirect or steal funds: every signature binds recipient and amount (§9).
-- Sigilo operates the registry root (a trusted operator, documented). Employers are trusted to commit correct gross amounts (they're the issuer). Employer KYB is simulated.
+- Sigilo operates the registry root (a trusted operator, documented). Employers are trusted to commit correct gross amounts (they're the issuer). Employer KYB is simulated: on testnet every new company is verified automatically (`AUTO_VERIFY_EMPLOYERS`), so testers get Income Passports.
 
 ---
 

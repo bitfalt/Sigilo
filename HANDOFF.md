@@ -7,7 +7,7 @@ Deadline: **2026-10-14 03:59 UTC** (Oct 13, 21:59 CST). Target submit Oct 13 18:
 ## Live
 
 - **sigilo.work** on Vercel (Root `apps/web`, build `npx convex deploy --cmd 'pnpm run build'`). Prod Convex `bold-marlin-213`, dev `brazen-poodle-85`.
-- Pages: `/` (landing), `/app` (worker), `/app/invite/[code]`, `/app/send`, `/app/receive`, `/app/settings`, `/employer`, `/lender`, `/v/[requestId]` (income check + advance offer), `/api/v1/verify` (MPP-paid), `/api/lender/verify`.
+- Pages: `/` (landing), `/record/[tx]` (what the internet sees for a payroll), `/app` (worker), `/app/invite/[code]`, `/app/send`, `/app/receive`, `/app/settings`, `/employer`, `/lender`, `/v/[requestId]` (income check + advance offer), `/api/v1/verify` (MPP-paid), `/api/lender/verify`.
 - Contracts on Monad testnet, verified: `packages/core/src/deployments.ts`. `AdvanceVault` `0xdB38A7F37f45934A42f4ddD740d8F69414de7734` (lender = LENDER, 30% cap, 2% fee, funded with 1,000 AUSD). Each `requestAdvance` costs the operator ~0.6 MON (5.8M gas proof check).
 
 ## What works end to end (testnet)
@@ -21,10 +21,14 @@ Deadline: **2026-10-14 03:59 UTC** (Oct 13, 21:59 CST). Target submit Oct 13 18:
 | Salary advance: lender offer → worker proves for the AdvanceVault (nonce binds her fresh account) → relayed `requestAdvance` → EIP-712 deduction mandate → payroll deducts and repays until closed | `pnpm smoke:advance` 11/11, `pnpm e2e:advance` 20/20                  |
 | Advanced settings (step-up): move everything out (`SigiloPay.collect`), export keys JSON                                                                                                           | `pnpm smoke:collect`, `pnpm e2e:settings` 32/32                       |
 | One passkey, several employers (passport carries over)                                                                                                                                             | `pnpm smoke:two-employers`                                            |
+| Stateless / new-device test (F9): wipe browser storage, sign in with the passkey, same balance, payslips and passport                                                                              | `pnpm e2e:stateless` 12/12                                            |
 
 All scripts run against the Convex deployment in `.env.local` (dev) and need `pnpm dev` for the Next routes. Shared helpers: `apps/web/scripts/lib/{testnet,browser}.mts`.
 
 ## Design notes (new today)
+
+- Prod Convex has `AUTO_VERIFY_EMPLOYERS=true` (2026-10-10): every new company is verified on-chain ~1.5 s after it registers. Manolo was verified by hand.
+- The worker session locks after 15 minutes idle (Mera session ended, keys wiped). The dashboard shows "Your account was ready in X seconds, with N taps" once after onboarding.
 
 - **Verification** (`convex/requests.ts`, `core/verify.ts`): a request's scope = `verifierScope(DEMO_LENDER, 10143)`, nonce = keccak(requestId) mod r. `requests.submit` checks scope/nonce/threshold/recency and calls `IncomePassportVerifier.verify` (view, free), so only valid answers reach the paid API. `/api/v1/verify` is `mppx.charge({amount:"0.10"})` (pull mode, operator pays gas, fee goes to the operator) and returns an EIP-712 `IncomeAttestation` signed by the operator. `requests.record` is an **action** (viem lazy-loads curve code, which mutations can't) that only accepts operator-signed attestations.
 - **Send home** (`core/send.ts`, `convex/transfers.ts`): the browser calls the relay with an **unauthenticated** `ConvexHttpClient`, so the server never learns the sender. Transfer receipts carry `intentHash` (the `Paid` event id), known before sending. Received CTK counts 1:1 in the one balance; `wallet.spendable` is AUSD only.
@@ -43,8 +47,7 @@ Each smoke/e2e run moves 0.25 MON from the faucet to a test employer. Top up the
 
 ## Pending user actions
 
-1. Decide: turn on `AUTO_VERIFY_EMPLOYERS=true` in prod Convex (every new company verified automatically, so testers and judges get Income Passports), and verify the existing "Manolo" company.
-2. One pass of the landing's scroll animation on the demo iPhone (Safari 18+ scroll timelines are untested here).
+1. One pass of the landing's scroll animation on the demo iPhone (Safari 18+ scroll timelines are untested here).
 
 Done 2026-10-10: Vercel CLI is logged in and linked (`apps/web/.vercel`, team `bitfalt-c7c98f2c`, project `sigilo`). `OPERATOR_PRIVATE_KEY`, `LENDER_PRIVATE_KEY`, `MPP_SECRET_KEY` are set for Production and a paid call to `https://sigilo.work/api/v1/verify` settled on-chain. Add more with `printf %s "$VALUE" | vercel env add NAME production` (never echo the value), then `vercel redeploy <latest prod url> --target production`.
 
