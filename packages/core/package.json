@@ -23,7 +23,8 @@
     "./roster": "./src/roster.ts",
     "./session": "./src/session.ts",
     "./verify": "./src/verify.ts",
-    "./send": "./src/send.ts"
+    "./send": "./src/send.ts",
+    "./collect": "./src/collect.ts"
   },
   "scripts": {
     "test": "vitest run",
