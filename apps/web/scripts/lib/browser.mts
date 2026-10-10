@@ -109,6 +109,8 @@ export async function openBrowser(port: number, outDir: string) {
           const input = document.querySelector(${JSON.stringify(selector)});
           const b = [...document.querySelectorAll("button")].find((b) => b.innerText.trim().includes(${JSON.stringify(button)}));
           if (!input || !b) return false;
+          // Not hydrated yet: React hasn't attached its handlers, so a click would submit natively.
+          if (!Object.keys(input).some((k) => k.startsWith("__reactProps"))) return false;
           const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
           if (input.value !== ${JSON.stringify(value)} || b.disabled) {
             setter.call(input, "");

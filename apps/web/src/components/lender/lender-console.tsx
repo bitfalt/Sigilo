@@ -579,6 +579,7 @@ function AdvancePanel({
         <label className="flex flex-col gap-1.5 text-sm font-semibold">
           Amount (USD)
           <Input
+            id="offer-amount"
             inputMode="decimal"
             value={amount}
             onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
