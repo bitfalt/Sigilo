@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { Advance } from "@/components/landing/advance";
 import { Hero } from "@/components/landing/hero";
 import { LandingMotion } from "@/components/landing/landing-motion";
+import { Passport } from "@/components/landing/passport";
 import { SealMark } from "@/components/landing/seal-mark";
+import { SendHome } from "@/components/landing/send-home";
 import { Problem, Split } from "@/components/landing/split";
 import { styles } from "@/components/landing/styles";
 import { Container, Perforation } from "@/components/landing/words";
@@ -14,8 +17,9 @@ export const metadata: Metadata = {
     "Get paid in digital dollars without your salary on display, prove what you earn without handing over your payslip, and borrow against your next paycheck.",
 };
 
-// The landing tells one month of María's pay, starting with getting paid privately (the split).
-// Motion: landing.css + landing-motion.tsx.
+// The landing tells one month of María's pay: paid privately (the split), proven to a lender
+// (Income Passport), borrowed against (advance), sent home. Motion: landing.css +
+// landing-motion.tsx.
 
 export default function Home() {
   return (
@@ -39,6 +43,10 @@ export default function Home() {
         <Perforation />
         <Problem />
         <Split />
+        <Perforation />
+        <Passport />
+        <Advance />
+        <SendHome />
       </main>
 
       <footer>
