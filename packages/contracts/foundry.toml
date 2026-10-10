@@ -9,6 +9,8 @@ network = "monad"
 optimizer = true
 optimizer_runs = 200
 fs_permissions = [{ access = "read", path = "./" }]
+# Sourcify verification on MonadVision (docs.monad.xyz/guides/verify-smart-contract/foundry).
+use_literal_content = true
 
 [rpc_endpoints]
 monad_testnet = "${MONAD_TESTNET_RPC_URL}"

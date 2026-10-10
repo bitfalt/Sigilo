@@ -7,6 +7,8 @@
     "build": "forge build",
     "test": "forge test",
     "fmt": "forge fmt",
-    "fmt:check": "forge fmt --check"
+    "fmt:check": "forge fmt --check",
+    "deploy:testnet": "forge script script/Deploy.s.sol --rpc-url monad_testnet --broadcast --gas-estimate-multiplier 110 --verify --verifier sourcify --verifier-url https://sourcify-api-monad.blockvision.org/",
+    "test:fork": "FORK_RPC_URL=https://testnet-rpc.monad.xyz forge test --match-contract Fork -vv"
   }
 }

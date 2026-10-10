@@ -19,8 +19,7 @@ interface IAgoraPairRoles {
 
 /// @dev Spike S2 on a fork of Monad testnet, against the real AUSD and Agora pair:
 ///      payroll `disperse` → one combined payment from several one-time accounts → swap to CTK.
-///      Skipped unless MONAD_TESTNET_RPC_URL is set:
-///      MONAD_TESTNET_RPC_URL=https://testnet-rpc.monad.xyz forge test --match-contract Fork
+///      Opt-in (needs network): `pnpm test:fork` in packages/contracts.
 contract SigiloPayForkTest is Test {
     // Verified on-chain 2026-10-09 (packages/core/src/constants.ts).
     address internal constant AUSD = 0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC;
@@ -37,7 +36,7 @@ contract SigiloPayForkTest is Test {
     SigiloPay internal pay;
 
     function setUp() public {
-        string memory rpc = vm.envOr("MONAD_TESTNET_RPC_URL", string(""));
+        string memory rpc = vm.envOr("FORK_RPC_URL", string(""));
         if (bytes(rpc).length == 0) return;
         vm.createSelectFork(rpc);
         forked = true;
