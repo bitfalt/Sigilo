@@ -23,6 +23,7 @@ import type * as registry from "../registry.js";
 import type * as requests from "../requests.js";
 import type * as runs from "../runs.js";
 import type * as sessions from "../sessions.js";
+import type * as transfers from "../transfers.js";
 
 import type {
   ApiFromModules,
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   requests: typeof requests;
   runs: typeof runs;
   sessions: typeof sessions;
+  transfers: typeof transfers;
 }>;
 
 /**

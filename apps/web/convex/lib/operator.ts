@@ -26,6 +26,10 @@ const passportVerifierAbi = parseAbi([
 
 const sigiloPayAbi = parseAbi([
   "event Dispersed(address indexed payer, uint256 pieces, uint256 total)",
+  "event Paid(bytes32 indexed intentHash, uint8 indexed action, address indexed to, uint256 total, uint256 amountOut)",
+  "struct Intent { uint8 action; address to; uint256 total; uint256 minOut; uint256 deadline; bytes32 salt; }",
+  "struct Authorization { address from; uint256 value; bytes signature; }",
+  "function sendHome(Authorization[] auths, Intent intent) returns (uint256 amountOut)",
 ]);
 
 function clients() {
@@ -68,7 +72,12 @@ export async function dispersedTotal(txHash: Hex, treasury: string): Promise<big
     if (log.address.toLowerCase() !== SIGILO_TESTNET.sigiloPay.toLowerCase()) continue;
     try {
       const event = decodeEventLog({ abi: sigiloPayAbi, data: log.data, topics: log.topics });
-      if (event.args.payer.toLowerCase() === treasury.toLowerCase()) return event.args.total;
+      if (
+        event.eventName === "Dispersed" &&
+        event.args.payer.toLowerCase() === treasury.toLowerCase()
+      ) {
+        return event.args.total;
+      }
     } catch {
       // Not a Dispersed event.
     }
@@ -85,4 +94,40 @@ export async function passportIsValid(proof: Hex, publicInputs: readonly Hex[]):
     functionName: "verify",
     args: [proof, publicInputs],
   });
+}
+
+export interface SendHomeArgs {
+  auths: { from: Hex; value: bigint; signature: Hex }[];
+  intent: { action: number; to: Hex; total: bigint; minOut: bigint; deadline: bigint; salt: Hex };
+}
+
+/**
+ * Relay SigiloPay.sendHome for the signed pieces. Simulated first, so a bad signature or an
+ * expired intent costs nothing. Returns the transaction and the CTK delivered.
+ */
+export async function relaySendHome({ auths, intent }: SendHomeArgs) {
+  const { account, publicClient, walletClient } = clients();
+  const request = {
+    address: SIGILO_TESTNET.sigiloPay,
+    abi: sigiloPayAbi,
+    functionName: "sendHome",
+    args: [auths, intent],
+    account,
+  } as const;
+  await publicClient.simulateContract(request);
+  const gas = await publicClient.estimateContractGas(request);
+  const hash = await walletClient.writeContract({ ...request, gas: (gas * 115n) / 100n });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") throw new Error(`transaction reverted: ${hash}`);
+  let amountOut = 0n;
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== SIGILO_TESTNET.sigiloPay.toLowerCase()) continue;
+    try {
+      const event = decodeEventLog({ abi: sigiloPayAbi, data: log.data, topics: log.topics });
+      if (event.eventName === "Paid") amountOut = event.args.amountOut;
+    } catch {
+      // Another event.
+    }
+  }
+  return { hash, amountOut };
 }

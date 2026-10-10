@@ -116,7 +116,7 @@ export async function verifiedEmployer(name: string, ausd: bigint) {
     account: faucet,
     chain: monadTestnet,
     transport,
-  }).sendTransaction({ to: treasury.address, value: parseEther("0.5"), gas: 21_000n });
+  }).sendTransaction({ to: treasury.address, value: parseEther("0.25"), gas: 21_000n });
   const mon = await chain.waitForTransactionReceipt({ hash: monTx });
   if (mon.status !== "success") throw new Error("MON funding failed");
   await sleep(1_500);
