@@ -19,6 +19,7 @@ import {
   InviteWelcomeView,
 } from "@/components/worker/worker-views";
 import { passportSecretFromPrf } from "@/lib/identity";
+import { finishFirstRun, startFirstRun, tapFirstRun } from "@/lib/first-run";
 import { getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { loadIdentity } from "@/lib/public-identity";
 
@@ -48,7 +49,10 @@ export function InviteFlow({ code }: { code: string }) {
     try {
       if (how === "known") await signIn(true);
       else if (how === "any") await signIn(false);
-      else if (how === "create") await create(name);
+      else if (how === "create") {
+        startFirstRun();
+        await create(name);
+      }
       setStep("joining");
     } catch (e) {
       setError(passkeyErrorMessage(e));
@@ -67,6 +71,7 @@ export function InviteFlow({ code }: { code: string }) {
         const { passportActive } = await accept({ inviteCodeHash });
         // Already has an Income Passport from another employer: nothing more to activate.
         if (passportActive) {
+          finishFirstRun();
           setStep("done");
           router.push("/app");
         } else {
@@ -82,10 +87,12 @@ export function InviteFlow({ code }: { code: string }) {
   async function activatePassport() {
     setError(null);
     setStep("activating");
+    tapFirstRun();
     try {
       const { prf } = await getPrf("passport", loadIdentity("worker") ?? undefined);
       const secret = passportSecretFromPrf(prf);
       await activate({ commitment: fieldToHex(commitment(secret)) });
+      finishFirstRun();
       setStep("done");
       router.push("/app");
     } catch (e) {

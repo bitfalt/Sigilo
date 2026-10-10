@@ -10,6 +10,7 @@ import { useKeys, useSigilo } from "@/components/sigilo-provider";
 import { useWorkerAccess } from "@/components/worker/use-worker-access";
 import { DashboardView, UnlockView } from "@/components/worker/worker-views";
 import type { WorkerKeys } from "@/lib/identity";
+import { finishFirstRun, startFirstRun, takeFirstRun } from "@/lib/first-run";
 import { passkeyErrorMessage } from "@/lib/passkeys";
 import { loadWallet, type Wallet } from "@/lib/wallet";
 
@@ -46,7 +47,12 @@ export function WorkerUnlock() {
       onNameChange={setName}
       busy={busy}
       error={error}
-      onCreate={() => run(() => create(name))}
+      onCreate={() =>
+        run(() => {
+          startFirstRun();
+          return create(name);
+        })
+      }
       onSignInKnown={() => run(() => signIn(true))}
       onSignInAny={() => run(() => signIn(false))}
     />
@@ -58,11 +64,16 @@ function WorkerDashboard({ keys }: { keys: WorkerKeys }) {
   const { isAuthenticated } = useConvexAuth();
   const register = useMutation(api.accounts.register);
   const [registered, setRegistered] = useState(false);
+  const [firstRun, setFirstRun] = useState<{ ms: number; taps: number } | null>(null);
 
   useEffect(() => {
     if (!isAuthenticated || registered) return;
     register({ paymentProfile: keys.paymentProfile, receiptPublicKey: keys.receiptPublicKey })
-      .then(() => setRegistered(true))
+      .then(() => {
+        finishFirstRun();
+        setFirstRun(takeFirstRun());
+        setRegistered(true);
+      })
       .catch(() => setRegistered(false));
   }, [isAuthenticated, registered, register, keys]);
 
@@ -94,6 +105,11 @@ function WorkerDashboard({ keys }: { keys: WorkerKeys }) {
       balance={wallet ? wallet.balance : null}
       payslips={payslips}
       transfers={transfers}
+      notice={
+        firstRun
+          ? `Your account was ready in ${(firstRun.ms / 1000).toFixed(1)} seconds, with ${firstRun.taps === 1 ? "1 tap" : `${firstRun.taps} taps`}. No app to install, no password.`
+          : undefined
+      }
       onLock={lock}
     />
   );

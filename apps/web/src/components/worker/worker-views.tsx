@@ -2,7 +2,7 @@
 // Convex and wallet logic stays in worker-home.tsx and invite-flow.tsx, and
 // /dev-preview/worker renders these with sample data.
 
-import { CircleAlert, KeyRound, Lock, Settings } from "lucide-react";
+import { Check, CircleAlert, KeyRound, Lock, Settings } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 
@@ -186,6 +186,7 @@ export function DashboardView({
   balance,
   payslips,
   transfers,
+  notice,
   onLock,
 }: {
   /** AUSD base units; null while the balance is being counted. */
@@ -193,6 +194,8 @@ export function DashboardView({
   /** null while the payslips are being opened. */
   payslips: PayslipEntry[] | null;
   transfers?: TransferEntry[];
+  /** A one-time note, e.g. how fast the account was ready. */
+  notice?: string;
   onLock(): void;
 }) {
   return (
@@ -219,6 +222,15 @@ export function DashboardView({
       }
     >
       <h1 className="sr-only">Your account</h1>
+      {notice && (
+        <p
+          role="status"
+          className="bg-card text-foreground mb-2 flex items-start gap-2 rounded-xl px-4 py-3 text-sm shadow-[0_10px_24px_-20px_rgba(15,42,32,0.5)] lg:mb-0"
+        >
+          <Check aria-hidden="true" className="text-primary mt-0.5 size-4 shrink-0" />
+          <span>{notice}</span>
+        </p>
+      )}
       <div className="grid gap-12 pt-2 lg:grid-cols-12 lg:gap-16 lg:pt-10">
         <div className="lg:col-span-5">
           <div className="lg:sticky lg:top-10">
