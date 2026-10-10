@@ -26,3 +26,8 @@ export const PASSPORT_PERIODS = 3;
 /** Merkle depths for the run tree and the global registry tree (SPEC.md §7.2). */
 export const RUN_TREE_DEPTH = 8;
 export const REGISTRY_TREE_DEPTH = 16;
+/**
+ * Gross pay and passport thresholds are committed as u64 USD cents, independent of the payroll
+ * token's decimals. Part of every payroll leaf: do not change.
+ */
+export const COMMITTED_AMOUNT_DECIMALS = 2;

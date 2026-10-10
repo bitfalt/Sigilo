@@ -91,6 +91,9 @@ importers:
       '@scure/bip39':
         specifier: ^2.4.0
         version: 2.4.0
+      '@zkpassport/poseidon2':
+        specifier: 0.6.2
+        version: 0.6.2
     devDependencies:
       typescript:
         specifier: ^5.9.3
@@ -1093,6 +1096,9 @@ packages:
 
   '@vitest/spy@5.0.3':
     resolution: {integrity: sha512-XhFysQTB8AZ+P4gMi+Lpo99vg2AZi0qKpaB9yXQl37+CaMEAPO3iH/wGVnSyL5MPERiLezpqTVtrR6UZH5GCXg==}
+
+  '@zkpassport/poseidon2@0.6.2':
+    resolution: {integrity: sha512-6sFHX9kAcrmDmBEEndvjZ8DA9FomunirQ5oCV6oD7bqr/lP0n0OBSRn86SZgQBXwRR+vq7sk16y31OgRBIOJ5Q==}
 
   accepts@2.0.0:
     resolution: {integrity: sha512-5cvg6CtKwfgdmVqY1WIiXKc3Q1bkRqGLi+2W/6ao+6Y7gu/RCwRuAhGEzh5B4KlszSuTLgZYuqFqo5bImjNKng==}
@@ -4252,6 +4258,8 @@ snapshots:
       vite: 8.3.3(jiti@2.7.0)
 
   '@vitest/spy@5.0.3': {}
+
+  '@zkpassport/poseidon2@0.6.2': {}
 
   accepts@2.0.0:
     dependencies:

@@ -7,7 +7,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./keys": "./src/keys.ts",
-    "./constants": "./src/constants.ts"
+    "./constants": "./src/constants.ts",
+    "./field": "./src/field.ts",
+    "./hash": "./src/hash.ts",
+    "./merkle": "./src/merkle.ts",
+    "./period": "./src/period.ts",
+    "./scope": "./src/scope.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -17,7 +22,8 @@
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
     "@scure/bip32": "^2.4.0",
-    "@scure/bip39": "^2.4.0"
+    "@scure/bip39": "^2.4.0",
+    "@zkpassport/poseidon2": "0.6.2"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
