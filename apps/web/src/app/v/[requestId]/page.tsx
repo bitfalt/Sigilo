@@ -1,19 +1,37 @@
+import type { Metadata } from "next";
 import { Suspense } from "react";
 
-// Public verification request page — see SPEC.md §4 (flow F5).
-// With cacheComponents, runtime params must be awaited below a <Suspense> boundary.
+import { PassportRequest } from "@/components/worker/passport-request";
+
+const TITLE = "Confirm your income with Sigilo";
+const DESCRIPTION =
+  "A lender asked to confirm your income. Answer with your Income Passport: they see that you earn enough, not your salary or your employer.";
+
+// Income check links travel over WhatsApp too, so they get their own preview text.
+export const metadata: Metadata = {
+  title: { absolute: TITLE },
+  description: DESCRIPTION,
+  robots: { index: false, follow: false },
+  openGraph: {
+    type: "website",
+    siteName: "Sigilo",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: [{ url: "/opengraph-image.jpg", width: 1200, height: 630, alt: "Sigilo" }],
+  },
+  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
+};
+
+// Lender income check (SPEC.md F5). With cacheComponents, runtime params are awaited under Suspense.
 export default function Page({ params }: PageProps<"/v/[requestId]">) {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Verification request</h1>
-      <Suspense fallback={null}>
-        <RequestId params={params} />
-      </Suspense>
-    </main>
+    <Suspense fallback={null}>
+      <Request params={params} />
+    </Suspense>
   );
 }
 
-async function RequestId({ params }: { params: PageProps<"/v/[requestId]">["params"] }) {
+async function Request({ params }: { params: PageProps<"/v/[requestId]">["params"] }) {
   const { requestId } = await params;
-  return <p className="text-muted-foreground font-mono text-sm">{requestId}</p>;
+  return <PassportRequest requestId={requestId} />;
 }

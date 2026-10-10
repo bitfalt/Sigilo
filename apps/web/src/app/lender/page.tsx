@@ -1,8 +1,13 @@
-// Lender console — see SPEC.md §3 and §4 (flows F5, F6, F7).
+import type { Metadata } from "next";
+
+import { LenderConsole } from "@/components/lender/lender-console";
+
+export const metadata: Metadata = {
+  title: "Income checks",
+  robots: { index: false, follow: false },
+};
+
+// Demo lender console — SPEC.md §3 and §4 (flows F5, F6).
 export default function Page() {
-  return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Lender console</h1>
-    </main>
-  );
+  return <LenderConsole />;
 }

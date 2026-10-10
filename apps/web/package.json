@@ -12,6 +12,7 @@
     "smoke:auth": "tsx --env-file=.env.local scripts/smoke-auth.mts",
     "smoke:payroll": "tsx --env-file=.env.local scripts/smoke-payroll.mts",
     "smoke:passport": "tsx --env-file=.env.local scripts/smoke-passport.mts",
+    "e2e:passport": "tsx --env-file=.env.local scripts/e2e-passport.mts",
     "e2e:passkey": "node scripts/e2e-passkey.mjs",
     "og:render": "node scripts/render-og.mjs"
   },
@@ -30,6 +31,7 @@
     "lucide-react": "^1.52.0",
     "mppx": "0.4.8",
     "next": "16.4.0",
+    "qrcode": "1.5.4",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "server-only": "0.0.1",
@@ -40,6 +42,7 @@
   "devDependencies": {
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/qrcode": "1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

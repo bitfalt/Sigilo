@@ -68,3 +68,13 @@ export function formatUsd(ausd: bigint): string {
 export function formatCents(cents: bigint | number | string): string {
   return (Number(cents) / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
+
+/** "$1,500" for whole dollars, "$1,500.50" otherwise (thresholds and limits). */
+export function formatAmount(cents: bigint | number | string): string {
+  const n = Number(cents);
+  return (n / 100).toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: n % 100 === 0 ? 0 : 2,
+  });
+}
