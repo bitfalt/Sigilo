@@ -16,7 +16,8 @@
     "./passport": "./src/passport.ts",
     "./stealth": "./src/stealth.ts",
     "./pieces": "./src/pieces.ts",
-    "./intent": "./src/intent.ts"
+    "./intent": "./src/intent.ts",
+    "./deployments": "./src/deployments.ts"
   },
   "scripts": {
     "test": "vitest run",

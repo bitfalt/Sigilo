@@ -1,4 +1,5 @@
 export * from "./constants";
+export * from "./deployments";
 export * from "./field";
 export * from "./hash";
 export * from "./intent";
