@@ -48,39 +48,42 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/* Sigilo theme: the landing's security-paper palette mapped onto the shadcn tokens.
+   paper green-grey, banknote ink, ultramarine security ink, payslip white. */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --font-sans: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  --background: #e8eee9;
+  --foreground: #0f2a20;
+  --card: #fbfcfa;
+  --card-foreground: #0f2a20;
+  --popover: #fbfcfa;
+  --popover-foreground: #0f2a20;
+  --primary: #2a3cb0;
+  --primary-foreground: #f4f6ff;
+  --secondary: #dbe5de;
+  --secondary-foreground: #0f2a20;
+  --muted: #dbe5de;
+  --muted-foreground: #4f6359;
+  --accent: #dbe5de;
+  --accent-foreground: #0f2a20;
+  --destructive: #b23a48;
+  --border: #c7d4cb;
+  --input: #b9c8bd;
+  --ring: #2a3cb0;
+  --chart-1: #2a3cb0;
+  --chart-2: #3f7f67;
+  --chart-3: #0f2a20;
+  --chart-4: #8aa596;
+  --chart-5: #b23a48;
+  --radius: 0.75rem;
+  --sidebar: #fbfcfa;
+  --sidebar-foreground: #0f2a20;
+  --sidebar-primary: #2a3cb0;
+  --sidebar-primary-foreground: #f4f6ff;
+  --sidebar-accent: #dbe5de;
+  --sidebar-accent-foreground: #0f2a20;
+  --sidebar-border: #c7d4cb;
+  --sidebar-ring: #2a3cb0;
 }
 
 .dark {
@@ -126,5 +129,20 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Wide, engraved headings shared by the landing and the app (Archivo width axis). */
+@layer utilities {
+  .font-display {
+    font-stretch: 125%;
+    font-weight: 780;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .font-wide {
+    font-stretch: 118%;
+    font-weight: 720;
+    letter-spacing: -0.015em;
   }
 }
