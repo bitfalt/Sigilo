@@ -117,8 +117,12 @@ try {
       const input = document.querySelector('input[placeholder="Company name"]');
       const button = [...document.querySelectorAll("button")].find((b) => b.textContent === "Create company account");
       if (!input || !button) return false;
-      if (input.value !== ${JSON.stringify(company)}) {
+      // If the name was typed before React hydrated, React treats it as the baseline and never
+      // fires onChange: clear and retype until the button reacts.
+      if (button.disabled) {
         const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+        setter.call(input, "");
+        input.dispatchEvent(new Event("input", { bubbles: true }));
         setter.call(input, ${JSON.stringify(company)});
         input.dispatchEvent(new Event("input", { bubbles: true }));
       }
