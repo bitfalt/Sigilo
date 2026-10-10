@@ -40,7 +40,7 @@ const STUBS = [
 
 const SEALED = [
   { what: "Names and salaries", how: "Encrypted on the employer's device" },
-  { what: "Payslips", how: "Sealed to each worker's Face ID" },
+  { what: "Payslips", how: "Sealed to each worker's passkey" },
   { what: "Who received which payment", how: "Never stored, anywhere" },
 ];
 

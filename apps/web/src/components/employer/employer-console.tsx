@@ -17,7 +17,7 @@ import { type EmployerKeys, employerKeysFromPrf } from "@/lib/identity";
 import { createPasskey, getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { type PayrollStep, runPayroll } from "@/lib/payroll-client";
 import { periodLabel, recentPeriods } from "@/lib/periods";
-import { saveIdentity, useBiometricName, useKnownIdentity } from "@/lib/public-identity";
+import { saveIdentity, useKnownIdentity } from "@/lib/public-identity";
 import { formatCents, formatUsd } from "@/lib/wallet";
 
 import { api } from "../../../convex/_generated/api";
@@ -35,7 +35,6 @@ export function EmployerConsole() {
 function EmployerUnlock({ onCreate }: { onCreate(name: string): void }) {
   const { setKeys } = useSigilo();
   const known = useKnownIdentity("employer");
-  const biometric = useBiometricName();
   const [mode, setMode] = useState<"auto" | "create">("auto");
   const [company, setCompany] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +79,7 @@ function EmployerUnlock({ onCreate }: { onCreate(name: string): void }) {
       {signingIn ? (
         <>
           <Button size="lg" onClick={() => open("known")} disabled={busy}>
-            {busy ? "Opening your company…" : `Continue with ${biometric}`}
+            {busy ? "Opening your company…" : "Sign in with passkey"}
           </Button>
           <button className="text-sm underline" onClick={() => setMode("create")} disabled={busy}>
             Create another company
@@ -89,8 +88,8 @@ function EmployerUnlock({ onCreate }: { onCreate(name: string): void }) {
       ) : (
         <>
           <p className="text-muted-foreground text-sm">
-            Create your company account. Your {biometric} keeps your payroll and your team&apos;s
-            salaries private, even from us.
+            Create your company account. It&apos;s secured with a passkey, so there&apos;s no
+            password, and your team&apos;s salaries stay private, even from us.
           </p>
           <input
             className="rounded-md border px-3 py-2 text-sm"
@@ -103,10 +102,10 @@ function EmployerUnlock({ onCreate }: { onCreate(name: string): void }) {
             onClick={() => open("create")}
             disabled={busy || company.trim().length < 2}
           >
-            {busy ? "Creating your company…" : `Create with ${biometric}`}
+            {busy ? "Creating your company…" : "Create company account"}
           </Button>
           <button className="text-sm underline" onClick={() => open("any")} disabled={busy}>
-            I already have a company account
+            Sign in with a passkey
           </button>
         </>
       )}

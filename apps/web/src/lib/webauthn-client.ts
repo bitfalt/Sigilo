@@ -92,16 +92,3 @@ export const deviceWebAuthnClient: WebAuthnClient = {
     };
   },
 };
-
-/** The name people know for this device's unlock, for button copy. */
-export function biometricName(userAgent: string, maxTouchPoints: number): string {
-  if (/iPhone|iPod/.test(userAgent)) return "Face ID";
-  // iPadOS reports itself as a Mac; touch points tell them apart.
-  if (/iPad/.test(userAgent) || (/Macintosh/.test(userAgent) && maxTouchPoints > 1)) {
-    return "Face ID";
-  }
-  if (/Macintosh|Mac OS X/.test(userAgent)) return "Touch ID";
-  if (/Android/.test(userAgent)) return "fingerprint or face";
-  if (/Windows/.test(userAgent)) return "Windows Hello";
-  return "your passkey";
-}

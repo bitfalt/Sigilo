@@ -1,11 +1,9 @@
 // Public identity cached on this device so the app can show a "locked" state after a reload
 // (Mera's none | locked | unlocked pattern) and go straight to this device's passkey. Never
-// secrets: unlocking always re-runs the biometric prompt, and clearing it only costs convenience
+// secrets: unlocking always re-runs the passkey prompt, and clearing it only costs convenience
 // (the stateless test signs in with a synced passkey instead).
 
 import { useMemo, useSyncExternalStore } from "react";
-
-import { biometricName } from "./webauthn-client";
 
 export interface PublicIdentity {
   role: "worker" | "employer";
@@ -76,13 +74,4 @@ export function useKnownIdentity(role: PublicIdentity["role"]): PublicIdentity |
     () => null,
   );
   return useMemo(() => (raw ? (JSON.parse(raw) as PublicIdentity) : null), [raw]);
-}
-
-/** "Face ID", "Touch ID", "fingerprint or face", "Windows Hello"… for button copy. */
-export function useBiometricName(): string {
-  return useSyncExternalStore(
-    () => () => {},
-    () => biometricName(navigator.userAgent, navigator.maxTouchPoints),
-    () => "Face ID",
-  );
 }

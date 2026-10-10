@@ -1,5 +1,5 @@
 // End-to-end passkey test in headless Chromium with a virtual *platform* authenticator (like
-// Touch ID / Face ID / Android biometrics) that supports PRF. Creates a company account through
+// a built-in passkey provider) that supports PRF. Creates a company account through
 // the real UI, then reloads and signs back in with the remembered passkey.
 // Usage: pnpm e2e:passkey [baseUrl] [screenshotDir]   (needs `pnpm dev` running for localhost)
 // Chromium: CHROME_BIN, or the Playwright headless shell (npx playwright install chromium-headless-shell).
@@ -115,7 +115,7 @@ try {
   for (let t = 0; t < 20000 && !ready; t += 250) {
     ready = await evaluate(`(() => {
       const input = document.querySelector('input[placeholder="Company name"]');
-      const button = [...document.querySelectorAll("button")].find((b) => b.textContent.startsWith("Create with"));
+      const button = [...document.querySelectorAll("button")].find((b) => b.textContent === "Create company account");
       if (!input || !button) return false;
       if (input.value !== ${JSON.stringify(company)}) {
         const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
@@ -128,7 +128,7 @@ try {
   }
   check("create button enabled after hydration", ready);
   await evaluate(
-    `[...document.querySelectorAll("button")].find((b) => b.textContent.startsWith("Create with")).click()`,
+    `[...document.querySelectorAll("button")].find((b) => b.textContent === "Create company account").click()`,
   );
   const created = await waitFor("Payroll balance");
   check("company created and dashboard opened", created, company);
@@ -150,7 +150,7 @@ try {
   check("returning visit offers to continue", await waitFor("Welcome back"));
   await sleep(1500); // let React hydrate before clicking
   await evaluate(
-    `[...document.querySelectorAll("button")].find((b) => b.textContent.startsWith("Continue with")).click()`,
+    `[...document.querySelectorAll("button")].find((b) => b.textContent === "Sign in with passkey").click()`,
   );
   check("signed back in to the same company", await waitFor(company));
   await shot("e2e-signed-back-in");

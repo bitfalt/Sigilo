@@ -1,5 +1,5 @@
-// Mera passkey ceremonies (SPEC.md §6). Each call is one biometric prompt (Face ID, Touch ID,
-// Android biometrics, Windows Hello). PRF outputs are returned to the caller, which must derive
+// Mera passkey ceremonies (SPEC.md §6). Each call is one passkey prompt, unlocked however the
+// person's password manager does it (biometrics or device PIN). PRF outputs are returned to the caller, which must derive
 // keys and wipe them immediately.
 
 import {
@@ -77,7 +77,7 @@ export function passkeyErrorMessage(error: unknown): string {
   if (isMeraError(error)) {
     switch (error.code) {
       case "PRF_UNAVAILABLE":
-        return "This device's password manager can't hold a Sigilo key yet. Try Safari with iCloud Keychain, or Chrome with Google Password Manager.";
+        return "This password manager can't secure a Sigilo account. When your browser asks where to save the passkey, choose Passwords (iCloud Keychain) or Google Password Manager.";
       case "PASSKEY_OPERATION_FAILED":
         return "We couldn't open your account on this device. If you're new, create your account first; otherwise try again.";
       case "CRYPTO_UNAVAILABLE":

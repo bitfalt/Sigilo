@@ -65,7 +65,7 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 **Worker app**
 | Pri | Feature |
 |---|---|
-| P0 | One-tap onboarding with Face ID or Touch ID (Mera passkey). No seed phrase, no extension, no email/OTP |
+| P0 | One-tap onboarding with a passkey (Mera), unlocked however the person's password manager does it (Face ID, Touch ID, Android biometrics, device PIN). No seed phrase, no extension, no email/OTP |
 | P0 | Accept an employer invite (link) and bind the payroll profile |
 | P0 | **One balance** in digital dollars and pay history. The balance is the sum of every one-time account she owns; she never sees pieces or accounts (§6.1) |
 | P0 | Encrypted payslips that only the worker can open |
@@ -73,7 +73,7 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 | P0 | **Send home** (Agora): send digital dollars to family abroad, converted instantly (AUSD → CTK, the local-currency stand-in). Spends her whole balance as one amount. Required for the Agora cross-border bounty ($10k, same track) |
 | P0 | New-device recovery: same passkey on a fresh browser restores balance, payslips, and passport (the "stateless test") |
 | P1 | Request a salary advance from a lender who verified the passport. Sign a payroll-deduction mandate |
-| P1 | **Advanced settings** (opt-in, Face ID + warning): move everything to an external account; export keys |
+| P1 | **Advanced settings** (opt-in, passkey step-up + warning): move everything to an external account; export keys |
 | P2 | Share a scoped payslip view with an accountant (re-encrypt selected payslips to their key) |
 | P2 | Daily pay drips ("get paid every day you work") |
 
@@ -102,7 +102,7 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 
 ### F1. Worker onboarding (P0)
 1. María opens the invite link from Acme (`/app/invite/[code]`).
-2. Taps **"Continue with Face ID"**, which calls Mera `createPasskeyWithPrfOutput` with salt `S_ACCOUNT`. That's one prompt.
+2. Taps **"Create my account"**, which calls Mera `createPasskeyWithPrfOutput` with salt `S_ACCOUNT` on this device's platform authenticator. That's one passkey prompt.
 3. Client derives (see §6) the session EVM key, the one-time-account spend and view keys, and the payslip keypair. It opens a Mera signing session (prompt-free for the rest of the session).
 4. Client sends to the backend her **payment profile**: the two public one-time-account keys (spend, view), the payslip public key, and the EVM address (session auth and mandates). The backend binds them to the employee record.
 5. A step-up prompt with salt `S_PASSPORT` derives `passportSecret`. The client sends `C = H(passportSecret)` (passport commitment) to the employer record. This can be deferred to "Activate passport".
@@ -110,7 +110,7 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 No third-party registration and no gas: every on-chain action of a worker is a signed message that Sigilo's relayer submits (§9 `SigiloPay`).
 
 ### F2. Employer setup (P0)
-1. The employer admin opens `/employer` and taps **Continue with Face ID** (Mera, salt `S_EMPLOYER`, one prompt). That derives the **treasury account** and the **roster key** (§6).
+1. The employer admin opens `/employer` and taps **Create company account** (Mera, salt `S_EMPLOYER`, one passkey prompt). That derives the **treasury account** and the **roster key** (§6).
 2. The demo employer "Acme Labs" is marked **verified** (KYB stand-in) in `SigiloRegistry` by the operator.
 3. **Add funds** (testnet): Sigilo's demo faucet sends testnet AUSD and a little MON to the treasury.
 4. The employer adds employees. Name and salary are **encrypted in the browser with the roster key**; the server stores ciphertext and a hash of the invite code. The employer shares the invite links.
@@ -157,7 +157,7 @@ The client decrypts her receipts, re-derives each one-time account (and checks i
 A judge clears local storage or opens the app on a second device, signs in with the same passkey, and gets the same EVM address, the same payment profile, the same balance (receipts from the server + balances from the chain), the same decrypted payslips, and the same passport pseudonyms. Nothing secret is persisted anywhere.
 
 ### F10. Advanced settings (P1)
-Hidden behind **Settings → Advanced**, a Face ID step-up and an explicit warning. This is the only screen that may use technical words.
+Hidden behind **Settings → Advanced**, a passkey step-up and an explicit warning. This is the only screen that may use technical words.
 1. **Move everything to another account:** sweeps every piece to an external address the user pastes (`SigiloPay.collect`).
 2. **Export keys:** downloads a JSON file with each one-time account's private key and balance, plus the spend and view keys.
 
@@ -399,6 +399,7 @@ The Track 02 bar is an **invisible blockchain**.
 - **Never use:** wallet, gas, token, transaction, chain, Monad, ZK, proof, hash, address, seed, private key.
 - **Use instead:** account, digital dollars (USD), payment, payslip, Income Passport, "verified", "private".
 - **One balance, one payment.** Pieces and one-time accounts are never shown. Paying spends from the whole balance.
+- **Name the account and the passkey, not the unlock method:** "Create company account", "Create my account", "Sign in with passkey". Never "Face ID" or "Touch ID" on buttons: the person's password manager decides how the passkey unlocks. If a browser offers a password manager without PRF support (e.g. Bitwarden), the error copy asks for iCloud Keychain (Passwords) or Google Password Manager.
 - **Exception:** Settings → Advanced (F10) may use technical terms, behind a step-up and a warning.
 - One primary action per screen. Show amounts in USD with local-currency equivalents.
 - Every wait state has human copy: *"Securing your payment…"*, *"Preparing your passport…"* (proof generation), never spinners alone.

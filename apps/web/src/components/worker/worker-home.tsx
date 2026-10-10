@@ -1,6 +1,6 @@
 "use client";
 
-// Worker app (SPEC.md F4, F9): unlock with the device biometric, then one balance and the payslips, all rebuilt
+// Worker app (SPEC.md F4, F9): sign in with a passkey, then one balance and the payslips, all rebuilt
 // from the passkey plus encrypted receipts. Unstyled until the UI pass.
 
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { type WorkerKeys, workerKeysFromPrf } from "@/lib/identity";
 import { getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { periodLabel } from "@/lib/periods";
-import { saveIdentity, useBiometricName, useKnownIdentity } from "@/lib/public-identity";
+import { saveIdentity, useKnownIdentity } from "@/lib/public-identity";
 import { formatCents, formatUsd, loadWallet, type Wallet } from "@/lib/wallet";
 
 import { api } from "../../../convex/_generated/api";
@@ -24,7 +24,6 @@ export function WorkerHome() {
 function WorkerUnlock() {
   const { setKeys } = useSigilo();
   const known = useKnownIdentity("worker");
-  const biometric = useBiometricName();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,7 +58,7 @@ function WorkerUnlock() {
             Welcome back{known.displayName ? `, ${known.displayName}` : ""}
           </h1>
           <Button size="lg" onClick={() => unlock(true)} disabled={busy}>
-            {busy ? "Opening your account…" : `Continue with ${biometric}`}
+            {busy ? "Opening your account…" : "Sign in with passkey"}
           </Button>
           <button className="text-sm underline" onClick={() => unlock(false)} disabled={busy}>
             Use a different account
@@ -73,7 +72,7 @@ function WorkerUnlock() {
             step.
           </p>
           <Button size="lg" variant="outline" onClick={() => unlock(false)} disabled={busy}>
-            {busy ? "Opening your account…" : "I already have an account"}
+            {busy ? "Opening your account…" : "Sign in with a passkey"}
           </Button>
           <p className="text-muted-foreground text-xs">
             On a new phone or computer? Your account comes with you: sign in with the passkey saved
