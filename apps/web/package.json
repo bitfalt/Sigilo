@@ -7,13 +7,15 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "dev:convex": "convex dev"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@sigilo/core": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
+    "convex": "1.46.0",
     "lucide-react": "^1.52.0",
     "next": "16.4.0",
     "react": "19.3.0",
