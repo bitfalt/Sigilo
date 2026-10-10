@@ -5,13 +5,13 @@
 
 | | |
 |---|---|
-| Status | v0.1 draft, 2026-10-07 |
+| Status | v0.2, 2026-10-09 (Unlink replaced by one-time accounts) |
 | Event | Monad Metropolis hackathon |
 | Primary track | **Track 02, Consumer Products & Payments** |
 | Hard deadline | **2026-10-14 03:59 UTC** (Oct 13, 21:59 UTC-6). Target submission: Oct 13, 18:00 UTC-6 |
 | Network | Monad testnet (chain ID `10143`) |
 | Team | Solo |
-| Production domain | **TBD.** Must be fixed before any passkey is created (passkeys bind to the rpId) |
+| Production domain | **TBD** (a subdomain of the founder's domain). Must be fixed before any passkey is created (passkeys bind to the rpId) |
 
 ---
 
@@ -53,8 +53,8 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 ### 3.1 Surfaces
 | Surface | Route | Device | Custody |
 |---|---|---|---|
-| Worker app (PWA) | `/app` | Mobile-first, installable | **Non-custodial.** Every key derives from the worker's passkey (Mera) |
-| Employer dashboard | `/employer` | Desktop | **Custodial treasury.** A server-held Unlink account, Deel-style |
+| Worker app (PWA) | `/app` | Mobile-first, installable | **Non-custodial.** Every key derives from the worker's passkey (Mera). Money sits in one-time accounts only her keys can spend |
+| Employer dashboard | `/employer` | Desktop | **Custodial treasury.** A server-held AUSD account, Deel-style |
 | Lender console | `/lender` | Desktop | Demo lender key held server-side |
 | Public verification page | `/v/[requestId]` | Any | — |
 | Landing | `/` | Any | — |
@@ -67,25 +67,26 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 |---|---|
 | P0 | One-tap onboarding with Face ID or Touch ID (Mera passkey). No seed phrase, no extension, no email/OTP |
 | P0 | Accept an employer invite (link) and bind the payroll profile |
-| P0 | Private balance ("digital dollars") and pay history |
+| P0 | **One balance** in digital dollars and pay history. The balance is the sum of every one-time account she owns; she never sees pieces or accounts (§6.1) |
 | P0 | Encrypted payslips that only the worker can open |
 | P0 | Income Passport: answer a lender's verification request with a ZK proof ("≥ $X/month for the last N months, verified employer") |
+| P0 | **Send home** (Agora): send digital dollars to family abroad, converted instantly (AUSD → CTK, the local-currency stand-in). Spends her whole balance as one amount. Required for the Agora cross-border bounty ($10k, same track) |
 | P0 | New-device recovery: same passkey on a fresh browser restores balance, payslips, and passport (the "stateless test") |
 | P1 | Request a salary advance from a lender who verified the passport. Sign a payroll-deduction mandate |
-| P1 | "Send home": send AUSD to family or across borders with Agora Instant Settlement (AUSD to local-currency stable, mocked with CTK) |
+| P1 | **Advanced settings** (opt-in, Face ID + warning): move everything to an external account; export keys |
 | P2 | Share a scoped payslip view with an accountant (re-encrypt selected payslips to their key) |
-| P2 | Private yield on idle balance (Unlink `execute` into a lending market) |
 | P2 | Daily pay drips ("get paid every day you work") |
 
 **Employer dashboard**
 | Pri | Feature |
 |---|---|
-| P0 | Treasury: fund with test tokens (faucet), view private treasury balance |
+| P0 | Treasury: fund with testnet AUSD (Agora faucet), view treasury balance |
 | P0 | Add employees: name, monthly salary, currency, then generate an invite link |
-| P0 | Run payroll: one private multi-recipient transfer + encrypted payslips + payroll-run commitment |
+| P0 | Run payroll: one payout in fixed-size pieces to fresh one-time accounts + encrypted payslips + payroll-run commitment |
 | P1 | Apply payroll deductions automatically for active advance mandates |
 | P1 | Salaries denominated in local currency (CRC/COP/MXN) and converted at the run's FX rate |
 | P2 | Scheduled payroll via a Chainlink CRE workflow |
+| P2 | Batch several employers' runs into one payout so pieces mix across companies |
 
 **Lender console**
 | Pri | Feature |
@@ -102,29 +103,28 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 ### F1. Worker onboarding (P0)
 1. María opens the invite link from Acme (`/app/invite/[code]`).
 2. Taps **"Continue with Face ID"**, which calls Mera `createPasskeyWithPrfOutput` with salt `S_ACCOUNT`. That's one prompt.
-3. Client derives (see §6) the EVM key, the Unlink seed, and the payslip keypair. It opens a Mera signing session (prompt-free for the rest of the session).
-4. Client registers the Unlink account (`client.ensureRegistered()`).
-5. Client sends to the backend: Unlink address, payslip public key, and the EVM address (for sessions and mandates). The backend binds them to the employee record.
-6. A step-up prompt with salt `S_PASSPORT` derives `passportSecret`. The client sends `C = H(passportSecret)` (passport commitment) to the employer record. This can be deferred to "Activate passport".
-7. Testnet only: the backend drips a little MON to the EVM address so public actions work without "get gas" steps.
+3. Client derives (see §6) the session EVM key, the one-time-account spend and view keys, and the payslip keypair. It opens a Mera signing session (prompt-free for the rest of the session).
+4. Client sends to the backend her **payment profile**: the two public one-time-account keys (spend, view), the payslip public key, and the EVM address (session auth and mandates). The backend binds them to the employee record.
+5. A step-up prompt with salt `S_PASSPORT` derives `passportSecret`. The client sends `C = H(passportSecret)` (passport commitment) to the employer record. This can be deferred to "Activate passport".
+
+No third-party registration and no gas: every on-chain action of a worker is a signed message that Sigilo's relayer submits (§9 `SigiloPay`).
 
 ### F2. Employer setup (P0)
 1. The demo employer "Acme Labs" is pre-seeded and marked **verified** (KYB stand-in) in `SigiloRegistry`.
-2. The employer funds the treasury: faucet → Unlink deposit (or `requestPrivateTokens` directly).
+2. The treasury is a server-held account, funded with testnet AUSD from the Agora faucet (`requestFunds`). It approves `SigiloPay` once.
 3. The employer adds employees and shares the invite links.
 
 ### F3. Payroll run (P0)
-1. The employer clicks **Run payroll** for period `P` (e.g. `202610`).
+1. The employer clicks **Run payroll** for period `P` (a month index, §7).
 2. The backend computes net pay per employee (salary − active deduction installments).
-3. **Private payout:** one Unlink multi-recipient transfer from the treasury account:
-   `client.transfer({ token, transfers: [{ recipientAddress, amount }, ...] })`
-4. **Payroll commitment:** for each employee *i*, the backend builds the leaf
-   `leaf_i = H(C_i, employerId, P, amount_i, salt_i)` (gross amount, random `salt_i`). It then builds the run tree, gets `runRoot`, and appends `regLeaf = H(employerId, P, runRoot)` to the global registry tree. It publishes the new `registryRoot` on-chain (`SigiloRegistry.publishRoot`).
-5. **Payslips:** for each employee, the backend encrypts `{period, gross, deductions, net, employerName, leaf preimage, run Merkle path, runRoot}` to the employee's payslip public key and stores the ciphertext.
-6. **Deductions (P1):** for each active mandate, the installment goes to the AdvanceVault through Unlink `execute` calling `AdvanceVault.repay(advanceId, amount)`. The fallback is an operator EOA.
+3. **Pieces:** each net pay is split into fixed denominations (1-2-5 series from $1,000 down to $0.01, greedy; $2,400 → 1,000 + 1,000 + 200 + 200). Each piece goes to a **fresh one-time account** derived from the worker's payment profile with a fresh random key (§6.1).
+4. **Payout:** one `SigiloPay.disperse(AUSD, recipients[], amounts[])` from the treasury, with every piece of every employee shuffled together. Active installments go to the AdvanceVault (`repay`) in the same run (P1).
+5. **Payroll commitment:** for each employee *i*, the backend builds the leaf
+   `leaf_i = H(C_i, employerId, P, gross_i, salt_i)` (gross amount in USD cents, random `salt_i`). It then builds the run tree, gets `runRoot`, and appends `regLeaf = H(employerId, P, runRoot)` to the global registry tree. It publishes the new `registryRoot` on-chain (`SigiloRegistry.publishRoot`).
+6. **Payslips:** for each employee, the backend encrypts `{period, gross, deductions, net, employerName, pieces: [{account, ephemeralKey, amount}], leaf preimage, run Merkle path, runRoot}` to the employee's payslip public key and stores the ciphertext as a **receipt**. Every incoming payment (payroll, advance, money from family) arrives with a receipt like this.
 
 ### F4. Worker sees pay (P0)
-Balance (`client.getBalances()`), history (`client.getTransactions()`), and payslips decrypted client-side. Copy: *"You got paid · $2,400 · Oct 2026"*. Never "transaction", "token", or "wallet".
+The client decrypts her receipts, re-derives each one-time account (and checks it matches), and reads all their AUSD balances in one multicall. Balance = the sum. History comes from the receipts. Copy: *"You got paid · $2,400 · Oct 2026"*. She never sees pieces, accounts, "transaction", "token" or "wallet".
 
 ### F5. Income Passport: verification request (P0)
 1. The lender creates a request in `/lender`: `{ threshold: 1500, months: 3, scope }`. It's shown as a QR or link to `/v/[requestId]`.
@@ -134,44 +134,56 @@ Balance (`client.getBalances()`), history (`client.getTransactions()`), and pays
 
 ### F6. Lender verifies via MPP (P0)
 1. The lender console calls `POST /api/v1/verify` (the Sigilo Verify API), which is gated by `mppx.charge()`.
-2. On `402`, the lender's MPP client pays (≈ $0.10, pull mode / ERC-3009) and retries.
+2. On `402`, the lender's MPP client pays (≈ $0.10 in AUSD, pull mode / ERC-3009) and retries.
 3. The API verifies the proof (bb.js), checks that `registryRoot` is known on-chain, and returns a Sigilo-signed result: `{ valid, threshold, months, pseudonym, registryRoot, verifiedAt }`.
 4. The lender UI shows *"Verified · $0.10 paid"* with the payment receipt.
 5. Alternative path: verify on-chain for free through `IncomePassportVerifier`. The paid API is the convenience/attestation product (no proving stack, signed receipt, freshness, and employer-KYB guarantees).
 
 ### F7. Salary advance with payroll deduction (P1)
 1. After verification, the lender offers *"Up to $450 now, repaid from your next 2 paychecks, 2% fee."*
-2. María accepts. The client calls `AdvanceVault.requestAdvance(proof, publicInputs, amount, recipient)`. The proof's `scope` must equal the vault's scope, and there's one active advance per `pseudonym`.
-3. María signs an EIP-712 **DeductionMandate** `{ advanceId, installment, installments, vault }` with her Mera EVM key. The backend delivers it to the employer's payroll engine.
-4. On the next payroll run (F3.6), the installment is deducted and repaid automatically. The lender sees it arrive.
+2. María accepts (step-up). The client proves with the vault's `scope`, derives a fresh one-time account for herself, and the relayer submits `AdvanceVault.requestAdvance(proof, publicInputs, amount, recipient)`. One active advance per `pseudonym`. A receipt is stored for her.
+3. María signs an EIP-712 **DeductionMandate** `{ advanceId, installment, installments, vault }` with her session EVM key. The backend delivers it to the employer's payroll engine.
+4. On the next payroll run (F3.4), the installment is paid from the treasury to the vault. The lender sees it arrive.
 
-### F8. Send home with Agora (P1, required for the Agora bounty)
-1. María taps **Send home** and enters $200 for her mom.
-2. Unlink `withdraw` moves the funds to her own EVM address (public step: it shows the amount and destination, not the source).
-3. Instant Settlement swap AUSD → CTK (stand-in for a local-currency stable) at a fixed price, then a transfer to the recipient.
-4. UI: *"Delivered in 0.8s."* The bounty video must show passkey onboarding, an AUSD balance, and a completed send/receive.
+### F8. Send home with Agora (P0, required for the Agora bounty)
+1. María taps **Send home** and enters $200 for her mom. Mom is a Sigilo contact: she joined through a link with her own passkey, so she has a payment profile too.
+2. The app picks pieces that cover $200 (the last one partially; the remainder stays where it is) and signs one ERC-3009 `receiveWithAuthorization` per piece with that piece's key, each bound to this exact payment (§9).
+3. The relayer submits `SigiloPay.sendHome(...)`: it pulls the pieces, swaps AUSD → CTK on Agora Instant Settlement at the fixed price, and delivers to a fresh one-time account of Mom's. Mom gets a receipt.
+4. UI: *"Delivered in 0.8s."* Mom's phone shows the money arriving. The bounty video must show passkey onboarding, an AUSD balance, and a completed send/receive.
 
 ### F9. Stateless / new-device test (P0, required for both Mera bounties)
-A judge clears local storage or opens the app on a second device, signs in with the same passkey, and gets the same EVM address, the same Unlink account and balance, the same decrypted payslips, and the same passport pseudonyms. Nothing secret is persisted anywhere.
+A judge clears local storage or opens the app on a second device, signs in with the same passkey, and gets the same EVM address, the same payment profile, the same balance (receipts from the server + balances from the chain), the same decrypted payslips, and the same passport pseudonyms. Nothing secret is persisted anywhere.
+
+### F10. Advanced settings (P1)
+Hidden behind **Settings → Advanced**, a Face ID step-up and an explicit warning. This is the only screen that may use technical words.
+1. **Move everything to another account:** sweeps every piece to an external address the user pastes (`SigiloPay.collect`).
+2. **Export keys:** downloads a JSON file with each one-time account's private key and balance, plus the spend and view keys.
 
 ---
 
 ## 5. Privacy model
 
+"Unlinkable payroll": the chain shows that payments happened, not who received them.
+
 | Data | Visible to |
 |---|---|
 | Individual salary | Worker, employer (and Sigilo as payroll operator) |
 | Who works for whom | Worker, employer, Sigilo. **Not on-chain** |
-| Employer treasury deposit (amount, source) | **Public** (Unlink deposits are public) |
-| Payroll transfers (sender, recipients, amounts) | **Private** (Unlink ZK transfer) |
+| Employer treasury funding (amount, source) | **Public** |
+| Payroll payout | **Public:** the treasury paid N fixed-size pieces (shuffled) to N fresh accounts, and the run's total. **Hidden:** which pieces belong to whom, so individual salaries and recipients |
+| A worker's pieces | Unlinked to her identity and to each other until she spends them together |
+| Spending / Send home | **Public:** the pieces spent (now linked to each other), the amount, the destination. Her identity stays hidden |
 | `registryRoot` | Public, but reveals nothing on its own |
 | Income predicate ("≥ $X for N months, verified employer") | Only the verifier the worker chose |
 | Worker identity across lenders | **Unlinkable.** A different `pseudonym` per verifier scope |
-| Withdrawals / Send home | Public amount and destination; the source private account stays hidden |
-| Advance disbursement | Public (vault → worker EVM address) |
+| Advance disbursement | Public amount to a fresh one-time account |
 | An active advance | Worker, lender, employer (needs it to deduct; same as real-world payroll deduction) |
 
-**Known trust assumptions (hackathon scope):** Sigilo operates the registry root (a trusted operator, documented). Employers are trusted to commit correct gross amounts (they're the issuer). Employer KYB is simulated. Unlink Engine trust boundaries apply (see Unlink trust model).
+**Known limits and trust assumptions (hackathon scope):**
+- Anonymity set = the employees paid in the same run. A one-person employer leaks that person's net pay. Multi-employer batched payouts (P2) and a shielded pool (roadmap) widen it.
+- Pieces are combined only when spent, never proactively.
+- Sigilo relays all worker actions, so it sees spend intents and could censor them. It cannot redirect or steal funds: every signature binds recipient and amount (§9).
+- Sigilo operates the registry root (a trusted operator, documented). Employers are trusted to commit correct gross amounts (they're the issuer). Employer KYB is simulated.
 
 ---
 
@@ -179,17 +191,28 @@ A judge clears local storage or opens the app on a second device, signs in with 
 
 One passkey, many keys. The PRF output depends on (credential, rpId, salt), and **each salt is an isolated namespace**. Each ceremony = one user-verification prompt.
 
-| PRF salt (32 bytes) | When prompted | Derived (HKDF-SHA256, `info` label) | Used for |
+| PRF salt (32 bytes) | When prompted | Derived | Used for |
 |---|---|---|---|
-| `S_ACCOUNT = sha256("sigilo/account/v1")` | Sign-in (one prompt) | `info="evm"` → secp256k1 key | Mera signing session, viem account (`toViemAccount`), mandates, Send home |
-| | | `info="unlink"` → 64-byte seed | `account.fromSeed(seed)` → Unlink account (non-custodial) |
-| | | `info="payslips"` → X25519 keypair | Decrypt payslips (employer encrypts to the public key) |
-| `S_PASSPORT = sha256("sigilo/passport/v1")` | **Step-up** when sharing a proof | `passportSecret` (field element) | Passport commitment `C = H(passportSecret)`; per-verifier `pseudonym = H(passportSecret, scope)` computed in-circuit |
+| `S_ACCOUNT = sha256("sigilo/account/v1")` | Sign-in (one prompt) | PRF entropy → BIP-39 → `m/44'/60'/0'/0/0` → secp256k1 key | Mera signing session, viem account (`toViemAccount`), session auth, deduction mandates |
+| | | HKDF `info="sigilo/stealth-spend/v1"` → secp256k1 scalar `s` | Spend key of every one-time account |
+| | | HKDF `info="sigilo/stealth-view/v1"` → secp256k1 scalar `v` | View key: derive and find one-time accounts |
+| | | HKDF `info="sigilo/payslips/v1"` → X25519 keypair | Decrypt payslips and receipts |
+| `S_PASSPORT = sha256("sigilo/passport/v1")` | **Step-up** when sharing a proof or accepting an advance | HKDF `info="sigilo/passport-secret/v1"` → field element | Passport commitment `C = H(passportSecret)`; per-verifier `pseudonym = H(passportSecret, scope)` computed in-circuit |
+
+Retired label (never reuse): `sigilo/unlink/v1`.
 
 Rules:
 - **Pick the production domain before creating any passkeys.** Passkeys are bound to the rpId, so changing domains orphans every account.
 - Nothing secret goes to localStorage or the server. Session keys live only in memory (Mera session `end()` on logout or expiry).
-- Session design (Mera UX criterion): prompt-free for viewing and low-risk signing within a session; re-prompt (step-up) for sharing a passport and for accepting an advance.
+- Session design (Mera UX criterion): prompt-free for viewing and paying within a session; re-prompt (step-up) for sharing a passport, accepting an advance, and Advanced settings.
+
+### 6.1 One-time accounts
+Stealth addresses with ERC-5564 scheme-1 math. Unlimited accounts from one passkey prompt.
+- **Payment profile:** `S = s·G`, `V = v·G` (compressed). Registered with the employer when the invite is accepted.
+- **Sender** (the payroll engine, or a worker paying family or herself): picks a random `r`, computes `R = r·G`, `h = keccak256(compress(r·V)) mod n`, `P = S + h·G`. The account is the EVM address of `P`. Only `R` and the amount go in the encrypted receipt; nothing is announced on-chain.
+- **Owner:** `h = keccak256(compress(v·R)) mod n`, private key `= s + h mod n`. The sender knows `h` but never `s`, so only the worker can spend.
+- **Pieces:** amounts are split into 1-2-5 denominations from $1,000 to $0.01, one fresh account per piece.
+- **Spending:** coin selection (fewest pieces; the last one partially), one ERC-3009 signature per piece, submitted together through `SigiloPay`. One balance and one payment for the user.
 
 ---
 
@@ -244,30 +267,35 @@ Cost estimate: N × (D_RUN + D_REG + 2) ≈ 78 Poseidon2 hashes. That should pro
 |---|---|
 | `SigiloRegistry` | Operator-managed. `setEmployerVerified(employerId, bool)`, `publishRoot(bytes32 root)`, root history (ring buffer of 64), `isKnownRoot(root)` |
 | `HonkVerifier` | Generated by `bb` from the circuit |
-| `IncomePassportVerifier` | `verify(proof, publicInputs) view` checks `isKnownRoot` and delegates to `HonkVerifier`. `attest(...)` emits `PassportVerified(scope, pseudonym, threshold, periodsHash)` |
-| `AdvanceVault` | Lender liquidity in AUSD (or test token). `requestAdvance(proof, publicInputs, amount, recipient)`: scope == vault scope, one active advance per pseudonym, `amount ≤ maxRatio × threshold`. `repay(advanceId, amount)`. Events: `AdvanceIssued`, `AdvanceRepaid`, `AdvanceClosed` |
-| *(fallback)* `MockUSD` | ERC-20 + ERC-3009, only if AUSD can't be used with Unlink or MPP on testnet |
+| `IncomePassportVerifier` | `verify(proof, publicInputs) view` checks `isKnownRoot` and delegates to `HonkVerifier` (reverts map to `false`). `attest(...)` consumes the request's `(scope, nonce)` and emits `PassportVerified(scope, pseudonym, threshold, firstPeriod, nonce, registryRoot)` |
+| `SigiloPay` | Stateless payment router, see below |
+| `AdvanceVault` | Lender liquidity in AUSD. `requestAdvance(proof, publicInputs, amount, recipient)`: scope == vault scope, one active advance per pseudonym, `amount ≤ maxRatio × threshold`. `repay(advanceId, amount)`, called by the employer treasury during payroll. Events: `AdvanceIssued`, `AdvanceRepaid`, `AdvanceClosed` |
+
+**`SigiloPay`**
+- `disperse(token, to[], amounts[])`: payroll payout from `msg.sender` (`transferFrom`).
+- `collect(auths[], intent)`: pulls pieces with AUSD `receiveWithAuthorization` (payee = `SigiloPay`) and forwards the total to `intent.to`. Used by Advanced "move everything" and plain payments.
+- `sendHome(auths[], intent)`: pulls the same way, swaps AUSD → CTK on the Agora pair (`SigiloPay` is an approved swapper), and delivers to `intent.to`.
+- **Binding:** `intentHash = keccak256(action, to, total, minOut, deadline, salt)`, and each authorization's ERC-3009 nonce must equal `keccak256(abi.encode(intentHash, from))`. A relayer or front-runner can't change the recipient, amount or action, and nonces can't be replayed.
 
 ---
 
-## 10. Backend API (Next.js route handlers)
+## 10. Backend (Next.js route handlers + Convex)
 
 | Route | Purpose |
 |---|---|
-| `POST /api/unlink/register`, `POST /api/unlink/authorization-token` | Unlink auth routes (`createUnlinkAuthRoutes` from `@unlink-xyz/sdk/admin`). Requires `UNLINK_API_KEY` |
-| `POST /api/session` | Worker signs a challenge with their Mera EVM key → session cookie (auth only, no custody) |
-| `GET /api/invite/[code]`, `POST /api/invite/[code]/accept` | Bind worker keys (Unlink address, payslip pubkey, EVM address, passport commitment) to the employee |
+| `POST /api/session` | Worker signs a challenge with their Mera EVM key → session (auth only, no custody) |
+| `GET /api/invite/[code]`, `POST /api/invite/[code]/accept` | Bind the worker's payment profile, payslip pubkey, EVM address and passport commitment to the employee |
 | `POST /api/employer/employees`, `GET /api/employer/employees` | Manage employees |
 | `POST /api/employer/runs`, `GET /api/employer/runs` | Execute payroll run (F3), list runs |
-| `GET /api/me/payslips` | Encrypted payslips for the session's worker |
+| `GET /api/me/receipts` | Encrypted payslips and other receipts for the session's worker |
 | `GET /api/registry/leaves` | All registry leaves (for client-side path building) |
 | `POST /api/requests`, `GET /api/requests/[id]`, `POST /api/requests/[id]/proof` | Verification requests (F5) |
 | `POST /api/v1/verify` | **MPP-gated** (`mppx.charge()`) Sigilo Verify API (F6) |
+| `POST /api/relay` | Validates and submits worker-signed actions with the operator key: `SigiloPay.collect/sendHome`, `AdvanceVault.requestAdvance`. Rate-limited per session |
 | `POST /api/mandates` | Store signed deduction mandates (F7) |
-| `POST /api/gas/drip` | Testnet only: small MON drip to new worker EVM addresses |
 | `POST /api/cre/payroll-due` | P2: called by the CRE workflow (signed) |
 
-**Storage:** Postgres (Neon or Supabase) + Drizzle. Tables: `employers`, `employees`, `invites`, `payroll_runs`, `payslips` (ciphertext only), `registry_leaves`, `verification_requests`, `verifications`, `mandates`, `advances` (cache of on-chain state).
+**Storage: Convex.** Tables: `employers`, `employees` (payment profile, payslip pubkey, EVM address, commitment), `invites`, `payrollRuns`, `receipts` (ciphertext only), `registryLeaves`, `verificationRequests`, `verifications`, `mandates`, `advances` (cache of on-chain state). Live queries drive the run status, the lender's "Verified" screen and the split-screen moment. Route handlers that need Node SDKs (mppx, the viem relayer, bb.js verification) stay in Next and use the Convex client.
 
 ---
 
@@ -279,17 +307,13 @@ Cost estimate: N × (D_RUN + D_REG + 2) ≈ 78 Poseidon2 hashes. That should pro
 - HTTPS or localhost only. PRF works with iCloud Keychain and 1Password (check the authenticator support page for Android/Chrome).
 - Docs: https://mera.category.xyz
 
-### Unlink (`@unlink-xyz/sdk@canary`)
-- Environment `monad-testnet` (chain `10143`). Mainnet requires an access grant, so **the hackathon runs on testnet**.
-- API key from https://dashboard.unlink.xyz (project for Monad testnet). Backend-only.
-- Worker: `@unlink-xyz/sdk/browser`, `account.fromSeed(seed64)`, `createUnlinkClient({ environment, account })`.
-- Employer treasury: `@unlink-xyz/sdk/client` (custodial) + `@unlink-xyz/sdk/admin`.
-- Calls: `ensureRegistered`, `depositWithApproval`, `transfer` (multi-recipient), `withdraw`, `execute` (needs a seed-backed account), `getBalances`, `getTransactions`, `faucet.requestTestTokens` / `faucet.requestPrivateTokens`.
-- Wait on `tx.wait({ until: "processed" })` before spending fresh funds.
-- Groth16 proving runs **on the Engine**; the client only signs. Mobile proving time is not a concern for Unlink.
-- The SDK has no memo or viewing-key disclosure API, so we keep our own encrypted payslip channel. `createUnlinkAuthRoutes` uses Web `Request`/`Response` and drops into Next route handlers.
-- **2026-10-09: the `monad-testnet` Engine host does not resolve** (`monad-testnet-production-api.unlink.xyz` → a fly.dev name with no DNS record). Check `curl https://monad-testnet-production-api.unlink.xyz/health` before relying on it. `createUnlinkClient` accepts `engineUrl` if Unlink gives us a new one.
-- Docs: https://docs.unlink.xyz (`/llms.txt`)
+### One-time accounts + ERC-3009 (replaces Unlink)
+- Derivation in `packages/core` (§6.1), with pinned vectors. Balances are read with one multicall of AUSD `balanceOf`.
+- Workers never hold MON. AUSD's ERC-3009 lets each piece's key sign an EIP-712 authorization; the operator key submits it through `SigiloPay`.
+- AUSD domain: `{ name: "Agora Dollar", version: "1", chainId: 10143, verifyingContract: AUSD }`.
+
+### Unlink (removed 2026-10-09)
+Every hosted Unlink environment, mainnets included, points to a fly.dev host that no longer exists, and `dashboard.unlink.xyz` returns 404. Nothing in Sigilo depends on it.
 
 ### MPP (`@monad-crypto/mpp` + `mppx` + `viem`)
 - Server: `Mppx.create({ methods: [monad({ account, recipient, currency: AUSD, decimals: 6, testnet: true })], secretKey })` from `mppx/nextjs`, then `export const POST = mppx.charge({ amount: "0.10", description })(handler)`. `amount` is human-readable; `currency`/`recipient` can be overridden per route.
@@ -311,6 +335,7 @@ Cost estimate: N × (D_RUN + D_REG + 2) ≈ 78 Poseidon2 hashes. That should pro
 - Testnet tokens + whitelisting: https://docs.agora.finance/instant-settlement/guides/getting-testnet-tokens.md
 - AUSD on Monad mainnet: `0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a`
 - AUSD supports ERC-3009 (and `permit`), so it's compatible with MPP pull mode. Its EIP-712 domain name is `"Agora Dollar"`, version `"1"`, although `name()` returns `"AUSD"`.
+- `SigiloPay` whitelists itself as an approved swapper at deploy (needed for Send home).
 - All addresses above were verified on-chain with `cast call` on 2026-10-09.
 - Docs: https://docs.agora.finance
 
@@ -326,7 +351,7 @@ Cost estimate: N × (D_RUN + D_REG + 2) ≈ 78 Poseidon2 hashes. That should pro
 - A **CLI simulation** is enough for the bounty. CRE supports Monad testnet for simulation (forwarder addresses in the CRE docs).
 
 ### Envio (P2, bounty: $1k)
-- HyperIndex over `SigiloRegistry`, `IncomePassportVerifier`, and `AdvanceVault`.
+- HyperIndex over `SigiloRegistry`, `IncomePassportVerifier`, `SigiloPay`, and `AdvanceVault`.
 - Derived entities: lender portfolio (outstanding, repaid, default rate), network stats (verified employers, runs, verifications).
 
 ---
@@ -336,18 +361,18 @@ Cost estimate: N × (D_RUN + D_REG + 2) ≈ 78 Poseidon2 hashes. That should pro
 ```
 Sigilo/
 ├── apps/
-│   └── web/                 # Next.js (App Router) PWA: /, /app, /employer, /lender, /v/[id], /api/*
+│   └── web/                 # Next.js (App Router) PWA: /, /app, /employer, /lender, /v/[id], /api/*; Convex functions
 ├── packages/
-│   ├── core/                # Shared TS: key derivation, Poseidon2 + trees, payslip crypto, types, constants
-│   ├── contracts/           # Foundry: SigiloRegistry, IncomePassportVerifier, HonkVerifier, AdvanceVault
-│   ├── circuits/            # Noir: income_passport (+ test vectors shared with core)
+│   ├── core/                # Shared TS: key derivation, one-time accounts, Poseidon2 + trees, passport witness, receipts, constants
+│   ├── contracts/           # Foundry: SigiloRegistry, IncomePassportVerifier, HonkVerifier, SigiloPay, AdvanceVault
+│   ├── circuits/            # Noir: income_passport (+ test vectors shared with core) and the Node prover
 │   ├── cre/                 # P2: CRE payroll workflow
 │   └── indexer/             # P2: Envio HyperIndex
 ├── SPEC.md
 └── README.md
 ```
 
-Stack: pnpm workspaces, TypeScript, Next.js + Tailwind + shadcn/ui, viem, Drizzle + Postgres, Foundry, Noir. Deploy the web app to Vercel on the **final domain** (passkey rpId).
+Stack: pnpm workspaces, TypeScript, Next.js + Tailwind + shadcn/ui, viem, Convex, Foundry, Noir. Deploy the web app to Vercel on the **final domain** (passkey rpId).
 
 ---
 
@@ -355,12 +380,14 @@ Stack: pnpm workspaces, TypeScript, Next.js + Tailwind + shadcn/ui, viem, Drizzl
 
 The Track 02 bar is an **invisible blockchain**.
 
-- **Never use:** wallet, gas, token, transaction, chain, Monad, Unlink, ZK, proof, hash, address, seed.
+- **Never use:** wallet, gas, token, transaction, chain, Monad, ZK, proof, hash, address, seed, private key.
 - **Use instead:** account, digital dollars (USD), payment, payslip, Income Passport, "verified", "private".
+- **One balance, one payment.** Pieces and one-time accounts are never shown. Paying spends from the whole balance.
+- **Exception:** Settings → Advanced (F10) may use technical terms, behind a step-up and a warning.
 - One primary action per screen. Show amounts in USD with local-currency equivalents.
 - Every wait state has human copy: *"Securing your payment…"*, *"Preparing your passport…"* (proof generation), never spinners alone.
 - The Agora bounty requires showing an **AUSD** balance. Show *"Digital dollars (AUSD)"* in the account details, not in the headline.
-- **Privacy you can see:** after a payroll run, a split screen shows "What María sees" vs. "What the internet sees" (the block explorer with nothing linkable). This is the demo's signature moment.
+- **Privacy you can see:** after a payroll run, a split screen shows "What María sees" ($2,400) vs. "What the internet sees" (the explorer: Acme paid 11 pieces to 11 new accounts; which are María's? No way to tell). This is the demo's signature moment.
 
 ---
 
@@ -370,12 +397,12 @@ The Track 02 bar is an **invisible blockchain**.
 |---|---|
 | 0:00 | Hook: *"Stablecoins put your salary on a block explorer. Anyone with your address knows what you earn."* (show a real explorer) |
 | 0:15 | María taps the invite, Face ID, done. (~5 s) |
-| 0:30 | Acme runs payroll for 3 employees in one click. Split screen: María sees $2,400; the explorer shows nothing linkable |
+| 0:30 | Acme runs payroll for 3 employees in one click. Split screen: María sees $2,400; the explorer shows identical pieces going to new accounts, none traceable to her |
 | 1:00 | María opens her payslip (decrypted on device) |
 | 1:15 | Fondo Quincena (laptop) shows a QR: "income ≥ $1,500, 3 months". María scans, Face ID, passport shared |
 | 1:45 | Lender verifies: *"Verified · $0.10 paid via MPP"*. Sees no employer, no salary |
 | 2:00 | Lender offers a $450 advance; María accepts. Next payroll run deducts the installment automatically |
-| 2:30 | María sends $200 home (Agora, instant) |
+| 2:30 | María sends $200 home (Agora, instant). Mom's phone shows it arrive |
 | 2:45 | Stateless test: fresh browser, same passkey, everything is back |
 | 2:55 | Close: *"Sigilo. The original proof of work."* |
 
@@ -383,35 +410,26 @@ The Track 02 bar is an **invisible blockchain**.
 
 ## 15. Plan
 
-### 15.1 Spikes (tonight, go/no-go)
-| # | Spike | Go criterion | Fallback |
-|---|---|---|---|
-| S1 | Mera PRF on target devices (iPhone Safari, desktop Chrome + iCloud/1Password) on the **deployed domain** | Same 32 bytes across devices | Desktop-only demo + phone via iCloud sync |
-| S2 | Unlink on `monad-testnet`: API key, `fromSeed(HKDF(PRF))`, register, faucet, multi-recipient transfer, balance read; **measure proving time on a phone** | Transfer confirmed; acceptable latency | Worker proving via custodial client (drops the "no custody backend" claim) |
-| S3 | Can Unlink `monad-testnet` hold **AUSD** (or only its mock tokens)? | AUSD deposit works | Payroll in Unlink's mock token shown as "USD"; AUSD only in Send home |
-| S4 | Agora testnet: whitelist via Whitelister, obtain AUSD, swap AUSD↔CTK | Swap succeeds | Agora bounty dropped; Send home becomes a plain transfer |
-| S5 | MPP on testnet: which token does `monad()` charge, and is it configurable (AUSD/USDC)? | Paid request round-trips | MockUSD with ERC-3009 |
-| S6 | Noir: compile toy circuit → browser proof → Solidity verifier deployed on Monad testnet → `verify` passes | End-to-end in < 2 h | Off-chain verification only (Verify API) |
-| S7 | ~~Ask the organizers whether a PWA counts as a "mobile application" for the Agora bounty~~ | **Resolved: yes** (confirmed on the hackathon Discord, 2026-10-08) | — |
-
-**Results (2026-10-09):**
-- **S1:** open. Blocked on the production domain.
-- **S2:** **at risk.** The `monad-testnet` Engine host doesn't resolve (see §11 Unlink). Phone proving is a non-issue: Unlink proves on the Engine.
-- **S3:** open. The API is confirmed; whether the pool accepts AUSD can only be tested against a live Engine.
-- **S4:** **go.** Whitelisting is self-service, and the AUSD faucet and swap are verified with read-only calls (§11 Agora).
-- **S5:** **partial go.** Pass `currency` = testnet AUSD. Pull mode needs a one-line `pnpm patch` (§11 MPP); push mode is the fallback.
-- **S6:** **go** off-chain and in Foundry. A TS witness → noir_js → bb.js proof (226 ms native) verifies in `HonkVerifier` (~5.4M gas). What remains: deploy to testnet and measure browser proving on a phone.
+### 15.1 Spikes
+| # | Spike | Status (2026-10-09) |
+|---|---|---|
+| S1 | Mera PRF on target devices (iPhone Safari, desktop Chrome + iCloud/1Password) on the **deployed domain**: same 32 bytes across devices | **Open.** Blocked on the domain. Fallback: desktop-only demo + phone via iCloud sync |
+| S2 | One-time-account payout on testnet: `disperse` AUSD to derived accounts, read the balance, spend several pieces through `SigiloPay` with `receiveWithAuthorization` | **Open** (replaces the Unlink spike). Fallback: submit per-piece `transferWithAuthorization` calls one by one |
+| S3 | ~~Can Unlink hold AUSD?~~ | **Obsolete.** Unlink removed; payroll is native AUSD |
+| S4 | Agora testnet: whitelist, obtain AUSD, swap AUSD↔CTK | **Go.** Self-service whitelisting, faucet and swap verified with read-only calls (§11 Agora) |
+| S5 | MPP on testnet: which token does `monad()` charge, and is it configurable? | **Partial go.** Pass `currency` = testnet AUSD; pull mode needs a one-line `pnpm patch` (§11 MPP); push mode is the fallback |
+| S6 | Noir: TS witness → proof → Solidity verifier → `verify` passes | **Go** off-chain and in Foundry (226 ms native proof, ~5.4M gas). Remaining: testnet deploy, browser proving on a phone |
+| S7 | Does a PWA count as a "mobile application" for the Agora bounty? | **Yes** (hackathon Discord, 2026-10-08) |
 
 ### 15.2 Phases (cut lines are in order)
 | When | Phase | Output |
 |---|---|---|
-| Oct 7 (night) | 0. Scaffold + spikes | Monorepo, deploy on the final domain, S1–S6 answered |
-| Oct 8 | 1. Accounts + payroll | Mera onboarding, worker Unlink account, employer treasury, payroll run, balance/history |
-| Oct 9 | 2. Commitments + circuit | Payslip encryption, trees, `SigiloRegistry`, Noir circuit, browser proving |
-| Oct 10 | 3. Verification | Verification requests, `IncomePassportVerifier`, MPP-gated Verify API, lender console |
-| Oct 11 | 4. Credit + cross-border | `AdvanceVault`, mandates, deductions in payroll, Send home (Agora) |
-| Oct 12 | 5. Polish + traction | UX pass, 5 real testers (record feedback), stateless test, CRE simulation, Envio (if time) |
-| Oct 13 | 6. Ship | Videos, README, bounty forms, **submit by 18:00 UTC-6** |
+| Oct 7–9 | 0–2. Scaffold, spikes, circuit | Done: monorepo, key schedule, registry, circuit + verifier, TS prover, `IncomePassportVerifier` |
+| Oct 9 (night) | 2b. Unlinkable payouts | Spec rewrite; one-time accounts, pieces and spend intents in core (pinned vectors); `SigiloPay` + tests; testnet deploy |
+| Oct 10 | 3. Accounts + payroll | Mera onboarding on the final domain, Convex schema, employer dashboard, payroll run (pieces, registry, receipts), worker balance and payslips |
+| Oct 11 | 4. Verification | Browser proving, verification requests, MPP-gated Verify API, lender console |
+| Oct 12 | 5. Cross-border + credit | Send home (Agora, P0), Advanced settings, AdvanceVault + mandates + deductions (P1). First testers in the evening |
+| Oct 13 | 6. Polish + ship | UX pass, 5+ testers, stateless test, videos, README, bounty forms, **submit by 18:00 UTC-6**. CRE/Envio only if time |
 
 ---
 
@@ -442,19 +460,20 @@ The Track 02 bar is an **invisible blockchain**.
 
 | Risk | Mitigation |
 |---|---|
-| Unlink proving or performance in mobile Safari | Measure in S2; fall back to desktop for the employer, keep worker flows light |
-| Unlink testnet token ≠ AUSD | S3 fallback; be explicit in the README |
+| Payout amounts and treasury outflows are public | Fixed-denomination pieces shuffled in one payout; state the anonymity set honestly; roadmap: multi-employer batches, shielded pool |
+| Spending links pieces together | Combine only at spend time; coin selection prefers the fewest pieces |
+| The relayer sees spend intents and could censor | Signatures bind recipient, amount and action; the relayer can't redirect funds. Advanced users can export keys and leave |
+| A derivation bug loses funds | Pinned vectors; owner and sender both recompute each account from `R` before showing or sending money |
+| AUSD ERC-3009 on testnet (`receiveWithAuthorization`, domain name "Agora Dollar") | S2; fork test against testnet AUSD |
 | Passkey PRF support varies (Android/Chrome) | Demo on iPhone + Mac with iCloud Keychain; document support |
-| Poseidon2 mismatch between TS and Noir | Shared test vectors from day 1 |
-| Agora whitelist on testnet | S4; Agora is P1, not P0 |
-| Proof replay | `nonce` bound into the proof; requests are single-use |
-| Scope creep (solo, 6 days) | Strict P0/P1/P2; cut P2 first, then the advance (keep it as a pitch slide) |
-| Domain change breaks passkeys | Lock the domain in Phase 0 |
+| Poseidon2 mismatch between TS and Noir | Done: shared vectors, also checked against Barretenberg |
+| Proof replay | `nonce` bound into the proof; requests are single-use; `attest` consumes `(scope, nonce)` |
+| Scope creep (solo, 4 days left) | Strict P0/P1/P2; cut P2 first, then the advance (keep it as a pitch slide) |
+| Domain change breaks passkeys | Lock the domain before any tester signs up |
 
-**Open questions** (answered 2026-10-09):
-- ~~Does Unlink's SDK expose any memo or viewing-key feature that could replace our own payslip channel?~~ No. "Scoped audit views" exists only in marketing. Keep our own payslip channel.
-- ~~`@monad-crypto/mpp`: how to set the amount and token per route in `mppx.charge()`?~~ `mppx.charge({ amount, currency?, recipient? })`, see §11 MPP.
-- **New:** is the Unlink `monad-testnet` Engine up, and does its pool accept testnet AUSD? (§11 Unlink, S2/S3)
+**Open questions:**
+- Multicall3 address on Monad testnet (check the `addresses` skill and the explorer).
+- Does `toViemAccount` (Mera) count as a local account for MPP pull mode? Set `mode: "pull"` explicitly either way.
 
 ---
 
@@ -466,4 +485,5 @@ The Track 02 bar is an **invisible blockchain**.
   2. More verifiers: landlords, visa and immigration, gig platforms.
   3. Proofs over other income sources (zkTLS on bank or Deel statements).
   4. Agents as payees: budgets for AI agents paid through MPP, under the same private ledger.
-  5. Monad mainnet with Unlink access grant.
+  5. Stronger privacy: multi-employer batched payouts, then a shielded pool that also hides amounts, delivered through the same receipt channel (no notes for users to manage).
+  6. Monad mainnet.
