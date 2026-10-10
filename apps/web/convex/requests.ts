@@ -57,6 +57,24 @@ const requestView = v.object({
   nonce: v.string(),
   status: statusValidator,
   expiresAt: v.number(),
+  offer: v.optional(
+    v.object({ amountCents: v.number(), installments: v.number(), feeBps: v.number() }),
+  ),
+  advance: v.optional(
+    v.object({
+      _id: v.id("advances"),
+      advanceId: v.string(),
+      amount: v.string(),
+      owed: v.string(),
+      vault: v.string(),
+      status: v.union(v.literal("active"), v.literal("closed")),
+      txHash: v.string(),
+      // Repayment progress from payroll deductions, once the worker signed the mandate.
+      installments: v.optional(v.number()),
+      paidInstallments: v.optional(v.number()),
+      remainingCents: v.optional(v.number()),
+    }),
+  ),
   result: v.optional(
     v.object({
       valid: v.boolean(),
@@ -113,6 +131,13 @@ export const get = query({
       .query("verifications")
       .withIndex("by_request", (q) => q.eq("request", request))
       .first();
+    const advance = row.advance ? await ctx.db.get("advances", row.advance) : null;
+    const mandate = advance
+      ? await ctx.db
+          .query("mandates")
+          .withIndex("by_advance", (q) => q.eq("advance", advance._id))
+          .first()
+      : null;
     let result;
     if (verification) {
       const { attestation } = JSON.parse(verification.attestation) as {
@@ -138,6 +163,27 @@ export const get = query({
       status: effectiveStatus(row, Date.now()),
       expiresAt: row.expiresAt,
       ...(result ? { result } : {}),
+      ...(row.offer ? { offer: row.offer } : {}),
+      ...(advance
+        ? {
+            advance: {
+              _id: advance._id,
+              advanceId: advance.advanceId,
+              amount: advance.amount,
+              owed: advance.owed,
+              vault: advance.vault,
+              status: advance.status,
+              txHash: advance.txHash,
+              ...(mandate
+                ? {
+                    installments: mandate.installments,
+                    paidInstallments: mandate.paidInstallments,
+                    remainingCents: mandate.remainingCents,
+                  }
+                : {}),
+            },
+          }
+        : {}),
     };
   },
 });

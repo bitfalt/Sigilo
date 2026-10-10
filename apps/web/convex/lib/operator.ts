@@ -154,3 +154,47 @@ export async function relayCollect({ auths, intent }: SendHomeArgs): Promise<{ h
   if (receipt.status !== "success") throw new Error(`transaction reverted: ${hash}`);
   return { hash };
 }
+
+const advanceVaultAbi = parseAbi([
+  "function requestAdvance(bytes proof, bytes32[] publicInputs, uint256 amount, address recipient, uint256 deadline, bytes32 salt) returns (uint256 advanceId)",
+  "event AdvanceIssued(uint256 indexed advanceId, uint256 indexed pseudonym, address indexed recipient, uint256 amount, uint256 owed)",
+]);
+
+/**
+ * Relay AdvanceVault.requestAdvance (simulated first). Verifying the proof on-chain costs ~5.4M
+ * gas, so the limit is the estimate plus 15% (Monad charges the limit).
+ */
+export async function relayRequestAdvance(args: {
+  proof: Hex;
+  publicInputs: Hex[];
+  amount: bigint;
+  recipient: Hex;
+  deadline: bigint;
+  salt: Hex;
+}) {
+  const { account, publicClient, walletClient } = clients();
+  const request = {
+    address: SIGILO_TESTNET.advanceVault,
+    abi: advanceVaultAbi,
+    functionName: "requestAdvance",
+    args: [args.proof, args.publicInputs, args.amount, args.recipient, args.deadline, args.salt],
+    account,
+  } as const;
+  await publicClient.simulateContract(request);
+  const gas = await publicClient.estimateContractGas(request);
+  const hash = await walletClient.writeContract({ ...request, gas: (gas * 115n) / 100n });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") throw new Error(`transaction reverted: ${hash}`);
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== SIGILO_TESTNET.advanceVault.toLowerCase()) continue;
+    try {
+      const event = decodeEventLog({ abi: advanceVaultAbi, data: log.data, topics: log.topics });
+      if (event.eventName === "AdvanceIssued") {
+        return { hash, advanceId: event.args.advanceId, owed: event.args.owed };
+      }
+    } catch {
+      // Another event.
+    }
+  }
+  throw new Error(`no AdvanceIssued event in ${hash}`);
+}

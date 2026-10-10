@@ -109,6 +109,11 @@ export default defineSchema({
     proof: v.optional(v.string()),
     publicInputs: v.optional(v.array(v.string())),
     expiresAt: v.number(),
+    // The lender's advance offer after a successful check (SPEC.md F7, P1).
+    offer: v.optional(
+      v.object({ amountCents: v.number(), installments: v.number(), feeBps: v.number() }),
+    ),
+    advance: v.optional(v.id("advances")),
   }),
 
   verifications: defineTable({
@@ -125,14 +130,21 @@ export default defineSchema({
   // Signed EIP-712 payroll-deduction mandates (SPEC.md F7, P1).
   mandates: defineTable({
     employee: v.id("employees"),
+    advance: v.id("advances"),
     advanceId: v.string(),
+    lenderName: v.string(),
     installmentCents: v.number(),
     installments: v.number(),
     paidInstallments: v.number(),
+    // Cents still owed according to payroll deductions so far.
+    remainingCents: v.number(),
     vault: v.string(),
+    deadline: v.number(),
     signature: v.string(),
     status: v.union(v.literal("active"), v.literal("completed"), v.literal("cancelled")),
-  }).index("by_employee_and_status", ["employee", "status"]),
+  })
+    .index("by_employee_and_status", ["employee", "status"])
+    .index("by_advance", ["advance"]),
 
   // One-time sign-in challenges (convex/http.ts). The nonce comes from the HTTP action.
   sessionChallenges: defineTable({
@@ -143,13 +155,15 @@ export default defineSchema({
     used: v.boolean(),
   }).index("by_nonce", ["nonce"]),
 
-  // Cache of AdvanceVault state (P1).
+  // Cache of AdvanceVault state (P1). AUSD amounts in base units; the chain is the truth.
   advances: defineTable({
     advanceId: v.string(),
+    vault: v.string(),
     pseudonym: v.string(),
     amount: v.string(),
-    outstanding: v.string(),
+    owed: v.string(),
     recipient: v.string(),
+    request: v.optional(v.id("verificationRequests")),
     status: v.union(v.literal("active"), v.literal("closed")),
     txHash: v.string(),
   }).index("by_advanceId", ["advanceId"]),
