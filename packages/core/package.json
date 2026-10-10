@@ -6,6 +6,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./advance": "./src/advance.ts",
     "./keys": "./src/keys.ts",
     "./constants": "./src/constants.ts",
     "./field": "./src/field.ts",
