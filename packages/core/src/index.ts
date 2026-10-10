@@ -8,5 +8,6 @@ export * from "./merkle";
 export * from "./passport";
 export * from "./period";
 export * from "./pieces";
+export * from "./receipts";
 export * from "./scope";
 export * from "./stealth";

@@ -17,15 +17,18 @@
     "./stealth": "./src/stealth.ts",
     "./pieces": "./src/pieces.ts",
     "./intent": "./src/intent.ts",
-    "./deployments": "./src/deployments.ts"
+    "./deployments": "./src/deployments.ts",
+    "./receipts": "./src/receipts.ts"
   },
   "scripts": {
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@noble/ciphers": "2.4.0",
     "@noble/curves": "^2.4.0",
     "@noble/hashes": "^2.4.0",
+    "@scure/base": "2.4.0",
     "@scure/bip32": "^2.4.0",
     "@scure/bip39": "^2.4.0",
     "@zkpassport/poseidon2": "0.6.2",
