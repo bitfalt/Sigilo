@@ -198,7 +198,7 @@ function EmptyPayslips() {
   );
 }
 
-/** Money received from family, newest first: who sent it, when, and how much. */
+/** Money received (from family, or an advance), newest first: who sent it, when, how much. */
 function ReceivedLedger({ transfers }: { transfers: TransferEntry[] }) {
   return (
     <section aria-labelledby="received-title">
@@ -227,7 +227,8 @@ function ReceivedLedger({ transfers }: { transfers: TransferEntry[] }) {
               <span className="min-w-0">
                 <span className="flex items-center gap-1.5 font-medium">
                   <HandCoins aria-hidden="true" className="text-primary size-4" />
-                  Money from {receipt.from || "family"}
+                  {receipt.kind === "advance" ? "Advance from" : "Money from"}{" "}
+                  {receipt.from || "family"}
                 </span>
                 <span className="text-muted-foreground block truncate text-sm">
                   {receipt.memo ?? "Arrived in your account"}

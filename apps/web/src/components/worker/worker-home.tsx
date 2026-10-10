@@ -85,7 +85,7 @@ function WorkerDashboard({ keys }: { keys: WorkerKeys }) {
 
   const transfers = wallet
     ? wallet.receipts.flatMap(({ id, receipt }) =>
-        receipt.kind === "transfer" ? [{ id, receipt }] : [],
+        receipt.kind === "transfer" || receipt.kind === "advance" ? [{ id, receipt }] : [],
       )
     : [];
 

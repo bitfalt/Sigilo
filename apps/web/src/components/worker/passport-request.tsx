@@ -4,10 +4,6 @@
 // passkey prompt (the passport namespace) unlocks the passport secret; the payslips are decrypted
 // and the Income Passport is sealed on this device. Only the sealed answer leaves it.
 
-import { encodePassportPublicInputs } from "@sigilo/core/passport";
-import { buildPassportInputs, PassportInputError } from "@sigilo/core/passport";
-import { decryptReceipt, payslipToPassportPayslip, type Receipt } from "@sigilo/core/receipts";
-import { isRecent, selectPassportPayslips } from "@sigilo/core/verify";
 import { useConvex, useConvexAuth, useMutation, useQuery } from "convex/react";
 import { Check, KeyRound, X } from "lucide-react";
 import Link from "next/link";
@@ -18,11 +14,12 @@ import { useKeys } from "@/components/sigilo-provider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { PassportStamp, Rosette, WaxSeal } from "@/components/worker/worker-art";
 import { ErrorNote } from "@/components/worker/worker-views";
+import { AdvanceOffer } from "@/components/worker/advance-offer";
 import { useWorkerAccess } from "@/components/worker/use-worker-access";
 import { passportSecretFromPrf, type WorkerKeys } from "@/lib/identity";
 import { getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { periodLabel } from "@/lib/periods";
-import { provePassport } from "@/lib/prover";
+import { AnswerError, passportErrorMessage, sealIncomePassport } from "@/lib/passport-client";
 import { loadIdentity } from "@/lib/public-identity";
 import { cn } from "@/lib/utils";
 import { formatAmount } from "@/lib/wallet";
@@ -38,9 +35,6 @@ type Step =
   | { kind: "ask" }
   | { kind: "working"; label: string; startedAt?: number }
   | { kind: "done"; periods: number[] };
-
-/** Friendly reasons for the ways an answer can't be built. */
-class AnswerError extends Error {}
 
 export function PassportRequest({ requestId }: { requestId: string }) {
   const request = useQuery(api.requests.get, { request: requestId });
@@ -79,68 +73,38 @@ export function PassportRequest({ requestId }: { requestId: string }) {
         paymentProfile: keys.paymentProfile,
         receiptPublicKey: keys.receiptPublicKey,
       });
-      const [stored, leaves] = await Promise.all([
+      const [stored, registryLeaves] = await Promise.all([
         convex.query(api.receipts.mine, {}),
         convex.query(api.registry.leaves, {}),
       ]);
-      const candidates = stored.flatMap((row) => {
-        if (row.kind !== "payslip") return [];
-        let receipt: Receipt;
-        try {
-          receipt = decryptReceipt(row.ciphertext, keys.receiptKeys.secretKey);
-        } catch {
-          return [];
-        }
-        if (receipt.kind !== "payslip" || !receipt.commitment) return [];
-        return [
-          { employerId: receipt.employer.employerId, payslip: payslipToPassportPayslip(receipt) },
-        ];
-      });
-      const threshold = BigInt(request.thresholdCents);
-      const picked = selectPassportPayslips(candidates, threshold);
-      const amount = formatAmount(request.thresholdCents);
-      if (!picked) {
-        throw new AnswerError(
-          `Your payslips don't show ${request.months} months in a row of at least ${amount}.`,
-        );
-      }
-      const periods = picked.map((p) => p.payslip.period);
-      if (!isRecent(periods[periods.length - 1]!)) {
-        throw new AnswerError(
-          `Your newest ${request.months} months of at least ${amount} are too old for this check.`,
-        );
-      }
-      const { inputs, publicInputs } = buildPassportInputs({
+      const sealed = await sealIncomePassport({
+        keys,
         passportSecret,
-        employerId: BigInt(picked[0]!.employerId),
-        payslips: picked.map((p) => p.payslip),
-        registryLeaves: leaves.map(BigInt),
-        threshold,
+        stored,
+        registryLeaves,
+        thresholdCents: request.thresholdCents,
+        months: request.months,
         scope: BigInt(request.scope),
         nonce: BigInt(request.nonce),
+        onSealing: () =>
+          setStep({
+            kind: "working",
+            label: "Sealing your Income Passport…",
+            startedAt: Date.now(),
+          }),
       });
-
-      setStep({ kind: "working", label: "Sealing your Income Passport…", startedAt: Date.now() });
-      const { proof } = await provePassport(inputs);
 
       setStep({ kind: "working", label: `Sending it to ${request.lenderName}…` });
       const result = await convex.action(api.requests.submit, {
         request: requestId as Id<"verificationRequests">,
-        proof,
-        publicInputs: encodePassportPublicInputs(publicInputs),
+        proof: sealed.proof,
+        publicInputs: sealed.publicInputs,
       });
       if (!result.ok) throw new AnswerError(result.reason);
-      setStep({ kind: "done", periods });
+      setStep({ kind: "done", periods: sealed.periods });
     } catch (e) {
       setStep({ kind: "ask" });
-      if (e instanceof AnswerError) setError(e.message);
-      else if (e instanceof PassportInputError) {
-        setError(
-          e.code === "run-not-registered"
-            ? "Your latest payslip is still being filed. Try again in a minute."
-            : "This passkey doesn't match the Income Passport on your payslips.",
-        );
-      } else setError(passkeyErrorMessage(e));
+      setError(passportErrorMessage(e));
     }
   }
 
@@ -150,6 +114,15 @@ export function PassportRequest({ requestId }: { requestId: string }) {
   }
 
   const amount = formatAmount(request.thresholdCents);
+  // After a verified check the lender may offer an advance; it shows up here live.
+  if (request.status === "verified" && request.offer) {
+    return (
+      <AdvanceOffer
+        request={{ ...request, offer: request.offer }}
+        taken={request.advance ? { amount: request.advance.amount } : null}
+      />
+    );
+  }
   if (step.kind === "done") {
     return (
       <AppShell>
@@ -162,6 +135,9 @@ export function PassportRequest({ requestId }: { requestId: string }) {
             <p className="text-muted-foreground mt-4 text-[1.0625rem] leading-relaxed">
               They can now confirm your income for {periodRange(step.periods)}. They didn&apos;t see
               your employer, your salary or your payslips.
+            </p>
+            <p className="text-muted-foreground mt-3 text-sm">
+              If {request.lenderName} offers you an advance, it appears right here.
             </p>
           </div>
           <Link href="/app" className={cn(buttonVariants({ size: "lg" }), PRIMARY)}>

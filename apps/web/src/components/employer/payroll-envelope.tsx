@@ -23,6 +23,8 @@ export interface PayrollSummary {
   total: string;
   /** Invited people who haven't joined yet. */
   waiting: number;
+  /** Advance installments deducted this run, e.g. "$229.50 to Fondo Quincena". */
+  deductions?: string[];
 }
 
 export type RunStatus = "pending" | "paying" | "committing" | "done" | "failed";
@@ -139,6 +141,11 @@ export function PayrollEnvelope({
                 {`Paying ${summary.people === 1 ? "1 person" : `${summary.people} people`} for ${selected?.label ?? "this month"}`}
               </p>
               <p className="mt-1 font-display text-[clamp(2.4rem,6vw,3rem)]">{summary.total}</p>
+              {summary.deductions && summary.deductions.length > 0 && (
+                <p className="mt-2 text-sm text-pretty opacity-85">
+                  Includes advance repayments deducted from pay: {summary.deductions.join(", ")}.
+                </p>
+              )}
               {summary.waiting > 0 && (
                 <p className="mt-2 text-sm text-pretty opacity-85">
                   {summary.waiting === 1

@@ -16,7 +16,7 @@ import { EXPLORER_URL } from "@/lib/config";
 import { errorMessage } from "@/lib/errors";
 import { type EmployerKeys, employerKeysFromPrf } from "@/lib/identity";
 import { createPasskey, getPrf, passkeyErrorMessage } from "@/lib/passkeys";
-import { type PayrollStep, runPayroll } from "@/lib/payroll-client";
+import { installmentDue, type PayrollStep, runPayroll } from "@/lib/payroll-client";
 import { periodLabel, recentPeriods } from "@/lib/periods";
 import { saveIdentity, useKnownIdentity } from "@/lib/public-identity";
 import { formatCents, formatUsd } from "@/lib/wallet";
@@ -261,6 +261,8 @@ function Payroll({
   const start = useMutation(api.runs.start);
   const submit = useMutation(api.runs.submit);
   const abort = useMutation(api.runs.abort);
+  const mandates = useQuery(api.advances.forPayroll);
+  const recordRepayment = useMutation(api.advances.recordRepayment);
   const [period, setPeriod] = useState(() => recentPeriods(1)[0]!);
   const [step, setStep] = useState<PayrollStep | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -274,11 +276,13 @@ function Payroll({
           start: (a) => start(a),
           submit: (a) => submit(a as Parameters<typeof submit>[0]),
           abort: (a) => abort(a as Parameters<typeof abort>[0]),
+          recordRepayment: (a) => recordRepayment(a as Parameters<typeof recordRepayment>[0]),
         },
         keys,
         employer,
         period,
         roster,
+        mandates: mandates ?? [],
         onStep: setStep,
       });
     } catch (e) {
@@ -301,8 +305,11 @@ function Payroll({
       people: payable.length,
       total: formatCents(cents),
       waiting: roster.filter((row) => row.status === "invited").length,
+      deductions: (mandates ?? [])
+        .filter((m) => installmentDue(m) > 0)
+        .map((m) => `${formatCents(installmentDue(m))} to ${m.lenderName}`),
     };
-  }, [roster, keys.rosterKey, employer.employerId]);
+  }, [roster, mandates, keys.rosterKey, employer.employerId]);
 
   const paidPeriods = new Set(
     (runs ?? [])

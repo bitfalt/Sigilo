@@ -4,6 +4,7 @@
 // to the applicant, and once the Income Passport arrives pays Sigilo $0.10 (MPP) to verify it.
 // The lender's key never reaches the browser: /api/lender/verify pays from the server.
 
+import { DEMO_ADVANCE_TERMS, maxAdvance } from "@sigilo/core/advance";
 import { DEMO_LENDER, VERIFY_PRICE_USD } from "@sigilo/core/verify";
 import { cn } from "cn";
 import { useMutation, useQuery } from "convex/react";
@@ -22,6 +23,7 @@ import { periodLabel } from "@/lib/periods";
 import { formatAmount } from "@/lib/wallet";
 
 import { api } from "../../../convex/_generated/api";
+import type { Id } from "../../../convex/_generated/dataModel";
 
 // ------------------------------------------------------------------ checks opened in this browser
 
@@ -299,6 +301,15 @@ function CheckDetail({ id }: { id: string }) {
         />
       )}
 
+      {check.status === "verified" && check.result?.valid && (
+        <AdvancePanel
+          request={check._id}
+          thresholdCents={check.thresholdCents}
+          offer={check.offer}
+          advance={check.advance}
+        />
+      )}
+
       {check.status === "expired" && (
         <p className="text-muted-foreground">
           The applicant didn&apos;t answer in time. Create a new check to ask again.
@@ -456,5 +467,150 @@ function Fact({ ok = false, children }: { ok?: boolean; children: React.ReactNod
       )}
       <span>{children}</span>
     </li>
+  );
+}
+
+// ------------------------------------------------------------------ salary advance (F7)
+
+function AdvancePanel({
+  request,
+  thresholdCents,
+  offer,
+  advance,
+}: {
+  request: Id<"verificationRequests">;
+  thresholdCents: number;
+  offer?: { amountCents: number; installments: number; feeBps: number };
+  advance?: {
+    amount: string;
+    owed: string;
+    txHash: string;
+    status: "active" | "closed";
+    installments?: number;
+    paidInstallments?: number;
+    remainingCents?: number;
+  };
+}) {
+  const make = useMutation(api.advances.offer);
+  const cap = Number(maxAdvance(BigInt(thresholdCents), DEMO_ADVANCE_TERMS.maxRatioBps) / 10_000n);
+  const [amount, setAmount] = useState(String(cap / 100));
+  const [installments, setInstallments] = useState(2);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const cents = Math.round(Number(amount) * 100);
+  const valid = Number.isFinite(cents) && cents >= 100 && cents <= cap;
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!valid) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await make({ request, amountCents: cents, installments });
+    } catch (err) {
+      setError(errorMessage(err, "Couldn't send the offer. Try again."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (advance) {
+    const owedCents = Number(BigInt(advance.owed) / 10_000n);
+    const repaid = advance.remainingCents === undefined ? 0 : owedCents - advance.remainingCents;
+    return (
+      <div className="border-foreground/15 flex flex-col gap-3 border-t pt-6">
+        <p className="font-wide text-lg">Salary advance</p>
+        <p className="text-[1.0625rem]">
+          Sent {formatAmount(Number(BigInt(advance.amount) / 10_000n))}.{" "}
+          {advance.status === "closed"
+            ? "Fully repaid from payroll."
+            : `Repaid ${formatAmount(repaid)} of ${formatAmount(owedCents)} from payroll.`}
+        </p>
+        <div className="bg-secondary h-2 overflow-hidden rounded-full">
+          <div
+            className="bg-primary h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+            style={{ width: `${Math.min(100, (repaid / owedCents) * 100)}%` }}
+          />
+        </div>
+        <p className="text-muted-foreground text-sm">
+          {advance.installments
+            ? `${advance.paidInstallments ?? 0} of ${advance.installments} paychecks deducted by the employer.`
+            : "Waiting for the applicant to set up the payroll deduction."}{" "}
+          <a
+            href={`${EXPLORER_URL}/tx/${advance.txHash}`}
+            target="_blank"
+            rel="noreferrer"
+            className="underline"
+          >
+            View payment
+          </a>
+        </p>
+      </div>
+    );
+  }
+
+  if (offer) {
+    return (
+      <div className="border-foreground/15 flex flex-col gap-2 border-t pt-6">
+        <p className="font-wide text-lg">Salary advance</p>
+        <p className="text-[1.0625rem]">
+          You offered {formatAmount(offer.amountCents)}, repaid from the next{" "}
+          {offer.installments === 1 ? "paycheck" : `${offer.installments} paychecks`}.
+        </p>
+        <p className="text-muted-foreground flex items-center gap-2 text-sm" role="status">
+          <span className="bg-primary size-2 animate-pulse rounded-full motion-reduce:animate-none" />
+          Waiting for the applicant to accept…
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} className="border-foreground/15 flex flex-col gap-4 border-t pt-6">
+      <div>
+        <p className="font-wide text-lg">Offer a salary advance</p>
+        <p className="text-muted-foreground text-sm">
+          Up to {formatAmount(cap)} ({DEMO_ADVANCE_TERMS.maxRatioBps / 100}% of the verified monthly
+          income), {DEMO_ADVANCE_TERMS.feeBps / 100}% fee, repaid by the employer straight from
+          payroll.
+        </p>
+      </div>
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1.5 text-sm font-semibold">
+          Amount (USD)
+          <Input
+            inputMode="decimal"
+            value={amount}
+            onChange={(e) => setAmount(e.target.value.replace(/[^0-9.]/g, ""))}
+            className="h-11 w-36 text-base"
+          />
+        </label>
+        <fieldset className="flex flex-col gap-1.5 text-sm font-semibold">
+          <legend className="mb-1.5">Paychecks</legend>
+          <div className="flex gap-2">
+            {[1, 2, 3].map((n) => (
+              <button
+                key={n}
+                type="button"
+                aria-pressed={installments === n}
+                onClick={() => setInstallments(n)}
+                className={cn(
+                  "h-11 min-w-11 rounded-full border-[1.5px] px-4",
+                  installments === n
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-foreground/25",
+                )}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        <Button type="submit" disabled={!valid || busy} className={primaryPill}>
+          {busy ? "Sending…" : `Offer ${valid ? formatAmount(cents) : "advance"}`}
+        </Button>
+      </div>
+      {error && <p className="text-destructive text-sm">{error}</p>}
+    </form>
   );
 }
