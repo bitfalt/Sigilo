@@ -12,7 +12,6 @@ import { useEffect, useMemo, useState } from "react";
 import { useKeys, useSigilo } from "@/components/sigilo-provider";
 import { Button } from "@/components/ui/button";
 import { ausdBalances, publicClient } from "@/lib/chain";
-import { EXPLORER_URL } from "@/lib/config";
 import { errorMessage } from "@/lib/errors";
 import { type EmployerKeys, employerKeysFromPrf } from "@/lib/identity";
 import { createPasskey, getPrf, passkeyErrorMessage } from "@/lib/passkeys";
@@ -328,7 +327,7 @@ function Payroll({
     period: periodLabel(run.period),
     total: run.payoutTxHash ? formatCents(run.totalNetCents) : null,
     status: run.status,
-    paymentUrl: run.payoutTxHash ? `${EXPLORER_URL}/tx/${run.payoutTxHash}` : null,
+    paymentUrl: run.payoutTxHash ? `/record/${run.payoutTxHash}` : null,
   }));
 
   return (

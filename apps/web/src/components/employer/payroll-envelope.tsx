@@ -251,7 +251,7 @@ function RunLedger({ runs }: { runs: RunEntry[] | undefined }) {
                     target="_blank"
                     rel="noreferrer"
                   >
-                    View payment
+                    What the internet sees
                   </a>
                 )}
               </div>
