@@ -48,7 +48,8 @@ export const start = mutation({
       .take(10);
     const pending = existing.find((r) => r.status === "pending");
     if (pending) return pending._id;
-    if (existing.some((r) => r.status !== "failed")) {
+    // A failed run that already paid (e.g. an unverified employer's) still counts as paid.
+    if (existing.some((r) => r.status !== "failed" || r.payoutTxHash)) {
       throw new ConvexError("Payroll already ran for this month");
     }
     return ctx.db.insert("payrollRuns", {
