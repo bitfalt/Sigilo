@@ -11,7 +11,8 @@
     "dev:convex": "convex dev",
     "smoke:auth": "tsx --env-file=.env.local scripts/smoke-auth.mts",
     "smoke:payroll": "tsx --env-file=.env.local scripts/smoke-payroll.mts",
-    "e2e:passkey": "node scripts/e2e-passkey.mjs"
+    "e2e:passkey": "node scripts/e2e-passkey.mjs",
+    "og:render": "node scripts/render-og.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

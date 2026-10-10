@@ -21,8 +21,23 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const SHARE_TITLE = "Sigilo · The original proof of work";
+const SHARE_DESCRIPTION =
+  "Get paid in digital dollars privately, prove your income without showing your payslip, and borrow against your next paycheck.";
+
 export const metadata: Metadata = {
+  // Absolute URLs for share previews (WhatsApp, X, LinkedIn); the image is opengraph-image.jpg.
+  metadataBase: new URL("https://sigilo.work"),
   title: { default: "Sigilo", template: "%s · Sigilo" },
+  openGraph: {
+    type: "website",
+    siteName: "Sigilo",
+    url: "/",
+    title: SHARE_TITLE,
+    description: SHARE_DESCRIPTION,
+    locale: "en_US",
+  },
+  twitter: { card: "summary_large_image", title: SHARE_TITLE, description: SHARE_DESCRIPTION },
   description:
     "Get paid in digital dollars privately, prove your income without revealing it, and borrow against your next paycheck.",
   applicationName: "Sigilo",
