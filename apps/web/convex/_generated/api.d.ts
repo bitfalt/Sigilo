@@ -9,8 +9,10 @@
  */
 
 import type * as accounts from "../accounts.js";
+import type * as crons from "../crons.js";
 import type * as employees from "../employees.js";
 import type * as employers from "../employers.js";
+import type * as faucet from "../faucet.js";
 import type * as http from "../http.js";
 import type * as lib_identity from "../lib/identity.js";
 import type * as lib_operator from "../lib/operator.js";
@@ -28,8 +30,10 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   accounts: typeof accounts;
+  crons: typeof crons;
   employees: typeof employees;
   employers: typeof employers;
+  faucet: typeof faucet;
   http: typeof http;
   "lib/identity": typeof lib_identity;
   "lib/operator": typeof lib_operator;

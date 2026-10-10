@@ -12,5 +12,7 @@ export default defineApp({
     // Sigilo operator: publishes registry roots and verifies employers. Secret.
     OPERATOR_PRIVATE_KEY: v.string(),
     MONAD_RPC_URL: v.optional(v.string()),
+    // Demo faucet (testnet only): funds new employer treasuries with AUSD and MON. Secret.
+    FAUCET_PRIVATE_KEY: v.string(),
   },
 });

@@ -45,6 +45,8 @@ export default defineSchema({
     verified: v.boolean(),
     // The admin's passkey-derived treasury account (S_EMPLOYER); also their session subject.
     treasuryAddress: v.string(),
+    // Last time the demo faucet funded this treasury (rate limit).
+    lastFundedAt: v.optional(v.number()),
   })
     .index("by_employerId", ["employerId"])
     .index("by_treasuryAddress", ["treasuryAddress"]),
