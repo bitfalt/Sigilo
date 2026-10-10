@@ -1,0 +1,17 @@
+diff --git a/dist/defaults.js b/dist/defaults.js
+index 4a5c5da..04ee150 100644
+--- a/dist/defaults.js
++++ b/dist/defaults.js
+@@ -78,6 +78,12 @@ export const erc3009Tokens = {
+         name: "USDT0",
+         version: "1",
+     },
++    // Sigilo patch: testnet AUSD (Agora). Its EIP-712 domain name is "Agora Dollar" even though
++    // name() returns "AUSD" (verified on-chain 2026-10-09).
++    ["0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC".toLowerCase()]: {
++        name: "Agora Dollar",
++        version: "1",
++    },
+ };
+ /** Resolves the default currency for a given chain. */
+ export function resolveCurrency(parameters) {

@@ -56,3 +56,6 @@ pnpm-debug.log*
 # Claude Code (local-only settings)
 .claude/settings.local.json
 packages/contracts/broadcast/**/*.lock
+
+# Claude Code agent worktrees
+.claude/worktrees/

@@ -7,3 +7,6 @@ allowBuilds:
   msgpackr-extract: false
   sharp: false
   unrs-resolver: false
+
+patchedDependencies:
+  "@monad-crypto/mpp@0.0.3": patches/@monad-crypto__mpp@0.0.3.patch
