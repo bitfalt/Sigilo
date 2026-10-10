@@ -165,7 +165,7 @@
   outline-offset: 3px;
   border-radius: 10px;
   background: rgba(244, 246, 255, 0.82);
-  transform: rotate(-4deg);
+  rotate: -4deg;
 }
 
 /* What the internet sees: pieces that can't be traced to anyone. */
@@ -176,4 +176,309 @@
 .lp-panel {
   background: var(--paper-shade);
   border-radius: 8px;
+}
+
+/* ------------------------------------------------------------------------------------------------
+   Motion. One orchestrated moment, "the split": as "Digital-dollar payroll is public payroll"
+   scrolls in, María's payslip tips toward the public record and four pieces of her pay ($1,000,
+   $1,000, $200, $200) slide out from under it, flip through the air and land among other people's
+   payments, where they lose their paper and become indistinguishable rows. Supporting it: the
+   Income Passport stamp presses down once, and the hero's layers drift apart as it scrolls away.
+
+   Scroll-driven (CSS view timelines) where supported. Elsewhere, landing-motion.tsx plays the same
+   keyframes once on arrival ([data-play] = "armed" → "on"). Every resting state is the final,
+   readable layout; reduced motion gets only that.
+   ------------------------------------------------------------------------------------------------ */
+
+/* Flying pieces may arc past the edge on small screens; never let them cause sideways scroll. */
+.lp-page {
+  overflow-x: clip;
+}
+
+.lp-split {
+  position: relative;
+  isolation: isolate;
+  view-timeline-name: --split;
+  /* Tilt of María's payslip while its pieces slide out from under it: the bottom edge lifts
+     toward the viewer, and, side by side, turns toward the ledger. */
+  --tilt-x: 24deg;
+  --tilt-y: 0deg;
+}
+
+@media (min-width: 640px) {
+  .lp-split {
+    --tilt-x: 22deg;
+    --tilt-y: -12deg;
+  }
+}
+
+/* The payslip sits above the pieces, so they appear from underneath it. */
+.lp-split-source {
+  position: relative;
+  z-index: 2;
+}
+
+.lp-piece {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+}
+
+/* A torn-off scrap of María's payslip (dashed tear line like the payslip's stub), carried by each
+   piece in flight and dropped on landing. */
+.lp-piece-paper {
+  position: absolute;
+  inset: -0.45em -0.7em;
+  z-index: -1;
+  border-radius: 4px;
+  border-left: 1.5px dashed rgba(15, 42, 32, 0.3);
+  background: var(--slip);
+  box-shadow:
+    0 1px 0 rgba(15, 42, 32, 0.08),
+    0 10px 22px -12px rgba(15, 42, 32, 0.55);
+  opacity: 0;
+}
+
+/* Per-piece slice of the timeline (percent of the stage's "cover" range): a staggered relay that
+   plays while the stage crosses the middle of the screen. */
+.lp-split [data-k="0"] {
+  --s: 13%;
+  --e: 33%;
+  --k: 0;
+}
+.lp-split [data-k="1"] {
+  --s: 18%;
+  --e: 39%;
+  --k: 1;
+}
+.lp-split [data-k="2"] {
+  --s: 23%;
+  --e: 45%;
+  --k: 2;
+}
+.lp-split [data-k="3"] {
+  --s: 28%;
+  --e: 51%;
+  --k: 3;
+}
+
+@media (min-width: 640px) {
+  .lp-split [data-k="0"] {
+    --s: 20%;
+    --e: 40%;
+  }
+  .lp-split [data-k="1"] {
+    --s: 25%;
+    --e: 46%;
+  }
+  .lp-split [data-k="2"] {
+    --s: 30%;
+    --e: 52%;
+  }
+  .lp-split [data-k="3"] {
+    --s: 35%;
+    --e: 58%;
+  }
+}
+
+/* --dx/--dy: from María's net pay to the piece's ledger slot; --ax/--ay: the arc's bow; --rz: spin.
+   Set by landing-motion.tsx from the live layout. */
+@keyframes lp-fly {
+  /* Pulled out from under the payslip, lifted toward the viewer and flipped mid-air, then laid
+     down flat as a ledger entry. */
+  0% {
+    opacity: 0;
+    transform: translate(var(--dx, 0px), var(--dy, 0px)) perspective(600px) rotateX(0deg)
+      rotateY(0deg) rotateZ(0deg) scale(1.5);
+    animation-timing-function: cubic-bezier(0.3, 0, 0.6, 1);
+  }
+  12% {
+    opacity: 1;
+  }
+  46% {
+    transform: translate(
+        calc(var(--dx, 0px) * 0.45 + var(--ax, 0px)),
+        calc(var(--dy, 0px) * 0.45 + var(--ay, -40px))
+      )
+      perspective(600px) rotateX(50deg) rotateY(-18deg) rotateZ(var(--rz, 6deg)) scale(2);
+    animation-timing-function: cubic-bezier(0.2, 0.6, 0.35, 1);
+  }
+  86% {
+    opacity: 1;
+    transform: translate(0px, -2px) perspective(600px) rotateX(-10deg) rotateY(0deg) rotateZ(0deg)
+      scale(1.04);
+    animation-timing-function: ease-out;
+  }
+  100% {
+    opacity: 1;
+    transform: translate(0px, 0px) perspective(600px) rotateX(0deg) rotateY(0deg) rotateZ(0deg)
+      scale(1);
+  }
+}
+
+@keyframes lp-paper {
+  0%,
+  84% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes lp-dest {
+  0%,
+  86% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes lp-tilt {
+  0%,
+  100% {
+    transform: perspective(1100px) rotateX(0deg) rotateY(0deg);
+  }
+  30%,
+  62% {
+    transform: perspective(1100px) rotateX(var(--tilt-x)) rotateY(var(--tilt-y));
+  }
+}
+
+/* The passport stamp coming down onto the paper, with a little rebound. */
+@keyframes lp-press {
+  0% {
+    opacity: 0;
+    scale: 1.7;
+    rotate: -13deg;
+  }
+  45% {
+    opacity: 1;
+  }
+  58% {
+    scale: 0.95;
+    rotate: -3.4deg;
+  }
+  78% {
+    scale: 1.015;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+    rotate: -4deg;
+  }
+}
+
+/* The hero rosette turns like an engraving lathe; payslip and stamp lift off at different depths,
+   the payslip nearest. They drift apart, never across each other's words. */
+@keyframes lp-lathe {
+  from {
+    rotate: -10deg;
+  }
+  to {
+    rotate: 22deg;
+  }
+}
+
+@keyframes lp-drift-slip {
+  to {
+    translate: 0 -72px;
+    transform: perspective(900px) rotateX(20deg);
+  }
+}
+
+@keyframes lp-drift-stamp {
+  to {
+    translate: 0 -18px;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Stamp: presses once on load (it's in view on wide screens). landing-motion.tsx re-arms it when
+     it starts below the fold and lets it fall when it arrives. */
+  .lp-press {
+    animation: lp-press 0.8s cubic-bezier(0.3, 0, 0.2, 1) 0.9s backwards;
+  }
+
+  @supports (animation-timeline: view()) {
+    .lp-split [data-k] .lp-piece,
+    .lp-split [data-k] .lp-piece-paper,
+    .lp-split [data-k] .lp-piece-dest,
+    .lp-split-source {
+      /* 1ms first: engines without "auto" durations still map one iteration onto the range. */
+      animation-duration: 1ms;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --split;
+      animation-range: cover var(--s) cover var(--e);
+    }
+    .lp-split [data-k] .lp-piece {
+      animation-name: lp-fly;
+      will-change: transform;
+    }
+    .lp-split [data-k] .lp-piece-paper {
+      animation-name: lp-paper;
+    }
+    .lp-split [data-k] .lp-piece-dest {
+      animation-name: lp-dest;
+    }
+    .lp-split-source {
+      --s: 10%;
+      --e: 52%;
+      animation-name: lp-tilt;
+    }
+
+    .lp-hero-art {
+      view-timeline-name: --hero;
+    }
+    .lp-lathe,
+    .lp-drift-slip,
+    .lp-drift-stamp {
+      animation-duration: 1ms;
+      animation-duration: auto;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --hero;
+    }
+    .lp-lathe {
+      animation-name: lp-lathe;
+      animation-range: cover 0% cover 100%;
+    }
+    .lp-drift-slip,
+    .lp-drift-stamp {
+      animation-range: cover 50% cover 100%;
+    }
+    .lp-drift-slip {
+      animation-name: lp-drift-slip;
+    }
+    .lp-drift-stamp {
+      animation-name: lp-drift-stamp;
+    }
+  }
+
+  /* Without scroll timelines: the same moments, played once when they arrive. */
+  [data-play="armed"].lp-press,
+  .lp-split[data-play="armed"] .lp-piece,
+  .lp-split[data-play="armed"] .lp-piece-dest {
+    animation: none;
+    opacity: 0;
+  }
+  [data-play="on"].lp-press {
+    animation: lp-press 0.8s cubic-bezier(0.3, 0, 0.2, 1) 0.1s backwards;
+  }
+  .lp-split[data-play="on"] [data-k] .lp-piece {
+    animation: lp-fly 1.25s linear calc(var(--k) * 0.16s) both;
+  }
+  .lp-split[data-play="on"] [data-k] .lp-piece-paper {
+    animation: lp-paper 1.25s linear calc(var(--k) * 0.16s) both;
+  }
+  .lp-split[data-play="on"] [data-k] .lp-piece-dest {
+    animation: lp-dest 1.25s linear calc(var(--k) * 0.16s) both;
+  }
+  .lp-split[data-play="on"] .lp-split-source {
+    animation: lp-tilt 1.7s ease-in-out both;
+  }
 }

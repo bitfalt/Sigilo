@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Guilloche } from "@/components/landing/guilloche";
+import { LandingMotion } from "@/components/landing/landing-motion";
 import { styles } from "@/components/landing/styles";
 import { SealMark } from "@/components/landing/seal-mark";
 
@@ -11,16 +12,17 @@ export const metadata: Metadata = {
     "Get paid in digital dollars without your salary on display, prove what you earn without handing over your payslip, and borrow against your next paycheck.",
 };
 
-// What everyone else sees after Acme's payroll: identical amounts to brand-new accounts.
-const PUBLIC_PIECES = [
-  "1,000.00",
-  "500.00",
-  "1,000.00",
-  "200.00",
-  "1,000.00",
-  "500.00",
-  "200.00",
-  "100.00",
+// What everyone else sees after Acme's payroll: identical amounts to brand-new accounts. María's
+// $2,400 is four of them; `piece` orders their flight from her payslip in the scroll animation.
+const PUBLIC_PIECES: { amount: string; piece?: number }[] = [
+  { amount: "1,000.00", piece: 0 },
+  { amount: "500.00" },
+  { amount: "1,000.00" },
+  { amount: "200.00", piece: 1 },
+  { amount: "1,000.00", piece: 2 },
+  { amount: "500.00" },
+  { amount: "200.00", piece: 3 },
+  { amount: "100.00" },
 ];
 
 const STUBS = [
@@ -119,11 +121,13 @@ export default function Home() {
             </div>
 
             <div className="lg:col-span-6">
-              <div className="relative mx-auto aspect-[5/6] w-full max-w-[540px] sm:aspect-square">
-                <Guilloche className="absolute inset-0 h-full w-full" />
+              <div
+                className={`${styles.heroArt} relative mx-auto aspect-[5/6] w-full max-w-[540px] sm:aspect-square`}
+              >
+                <Guilloche className={`${styles.lathe} absolute inset-0 h-full w-full`} />
 
                 <div
-                  className={`${styles.slip} absolute top-[6%] left-[3%] w-[76%] -rotate-3 p-4 sm:top-[16%] sm:left-[8%] sm:w-[66%] sm:p-6`}
+                  className={`${styles.slip} ${styles.driftSlip} absolute top-[6%] left-[3%] w-[76%] -rotate-3 p-4 sm:top-[16%] sm:left-[8%] sm:w-[66%] sm:p-6`}
                 >
                   <p className="text-sm font-semibold sm:text-base">Acme Labs</p>
                   <p className={`${styles.muted} text-xs sm:text-sm`}>Payslip, October 2026</p>
@@ -147,15 +151,17 @@ export default function Home() {
                 </div>
 
                 <div
-                  className={`${styles.stamp} absolute right-[2%] bottom-[4%] w-[66%] p-3 sm:right-[3%] sm:bottom-[7%] sm:w-[56%] sm:p-4`}
+                  className={`${styles.driftStamp} absolute right-[2%] bottom-[4%] w-[66%] sm:right-[3%] sm:bottom-[7%] sm:w-[56%]`}
                 >
-                  <p className={`${styles.heading} text-base sm:text-xl`}>Income verified</p>
-                  <p className="mt-1 text-xs leading-snug sm:text-sm">
-                    At least $1,500 a month for 3 months, from a verified employer.
-                  </p>
-                  <p className="mt-1 text-[11px] opacity-80 sm:text-xs">
-                    Salary and employer not shared.
-                  </p>
+                  <div className={`${styles.stamp} ${styles.press} p-3 sm:p-4`} data-play="">
+                    <p className={`${styles.heading} text-base sm:text-xl`}>Income verified</p>
+                    <p className="mt-1 text-xs leading-snug sm:text-sm">
+                      At least $1,500 a month for 3 months, from a verified employer.
+                    </p>
+                    <p className="mt-1 text-[11px] opacity-80 sm:text-xs">
+                      Salary and employer not shared.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -182,11 +188,17 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid items-start gap-4 sm:grid-cols-2 lg:col-span-7">
-              <figure className={`${styles.slip} flex flex-col p-5 sm:p-6`}>
+            <div
+              className={`${styles.split} grid items-start gap-4 sm:grid-cols-2 lg:col-span-7`}
+              data-split=""
+              data-play=""
+            >
+              <figure className={`${styles.slip} ${styles.splitSource} flex flex-col p-5 sm:p-6`}>
                 <figcaption className={`${styles.muted} text-sm`}>What María sees</figcaption>
                 <p className="mt-6 text-sm">You got paid</p>
-                <p className={`${styles.heading} text-4xl xl:text-5xl`}>$2,400.00</p>
+                <p className={`${styles.heading} text-4xl xl:text-5xl`}>
+                  <span data-split-from="">$2,400.00</span>
+                </p>
                 <p className={`${styles.muted} mt-2 text-sm`}>Acme Labs, October 2026</p>
               </figure>
               <figure className={`${styles.panel} p-5 sm:p-6`}>
@@ -194,10 +206,24 @@ export default function Home() {
                   What everyone else sees
                 </figcaption>
                 <ul className="mt-4 text-sm">
-                  {PUBLIC_PIECES.map((amount, i) => (
-                    <li key={i} className={`${styles.ledgerRow} flex justify-between py-1.5`}>
-                      <span>${amount}</span>
-                      <span className={styles.muted}>to a new account</span>
+                  {PUBLIC_PIECES.map(({ amount, piece }, i) => (
+                    <li
+                      key={i}
+                      className={`${styles.ledgerRow} flex justify-between py-1.5`}
+                      data-k={piece}
+                    >
+                      {piece === undefined ? (
+                        <span>${amount}</span>
+                      ) : (
+                        <span className={styles.piece} data-piece={piece}>
+                          <span className={styles.piecePaper} aria-hidden="true" />${amount}
+                        </span>
+                      )}
+                      <span
+                        className={`${styles.muted} ${piece === undefined ? "" : styles.pieceDest}`}
+                      >
+                        to a new account
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -303,6 +329,7 @@ export default function Home() {
           <p className={styles.muted}>Testnet preview: payments use test dollars.</p>
         </Container>
       </footer>
+      <LandingMotion />
     </div>
   );
 }
