@@ -159,6 +159,33 @@ try {
   check("signed back in to the same company", await waitFor(company));
   await shot("e2e-signed-back-in");
 
+  // 4. Worker: create an account directly at /app (no invite needed), same device authenticator.
+  await send("Page.navigate", { url: `${base}/app` });
+  check("worker page offers to create an account", await waitFor("Create my account"));
+  let workerReady = false;
+  for (let t = 0; t < 20000 && !workerReady; t += 250) {
+    workerReady = await evaluate(`(() => {
+      const input = document.querySelector('input[autocomplete="name"]');
+      const button = [...document.querySelectorAll("button")].find((b) => b.textContent === "Create my account");
+      if (!input || !button) return false;
+      if (button.disabled) {
+        const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
+        setter.call(input, "");
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        setter.call(input, "Maria Test");
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      return !button.disabled;
+    })()`);
+    if (!workerReady) await sleep(250);
+  }
+  await evaluate(
+    `[...document.querySelectorAll("button")].find((b) => b.textContent === "Create my account").click()`,
+  );
+  check("worker account created, balance shown", await waitFor("Digital dollars (AUSD)"));
+  const all = await send("WebAuthn.getCredentials", { authenticatorId });
+  check("worker passkey stored on the device authenticator", all.credentials.length === 2);
+
   ws.close();
 } finally {
   const exited = new Promise((r) => chrome.once("exit", r));

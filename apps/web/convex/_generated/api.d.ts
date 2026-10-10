@@ -16,6 +16,7 @@ import type * as faucet from "../faucet.js";
 import type * as http from "../http.js";
 import type * as lib_identity from "../lib/identity.js";
 import type * as lib_operator from "../lib/operator.js";
+import type * as maintenance from "../maintenance.js";
 import type * as me from "../me.js";
 import type * as receipts from "../receipts.js";
 import type * as registry from "../registry.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   http: typeof http;
   "lib/identity": typeof lib_identity;
   "lib/operator": typeof lib_operator;
+  maintenance: typeof maintenance;
   me: typeof me;
   receipts: typeof receipts;
   registry: typeof registry;

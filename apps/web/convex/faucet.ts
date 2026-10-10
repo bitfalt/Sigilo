@@ -23,7 +23,7 @@ import { action, env, internalAction, internalMutation } from "./_generated/serv
 
 const FUND_AUSD = 3_000_000_000n; // $3,000
 const FUND_MON = parseEther("0.25");
-const COOLDOWN_MS = 10 * 60 * 1000;
+const COOLDOWN_MS = 3 * 60 * 1000;
 const SPACING_MS = 1_500;
 
 const agoraFaucetAbi = parseAbi(["function requestFunds(address recipient)"]);
@@ -40,22 +40,31 @@ function clients(privateKey: string) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Atomically check the cooldown and claim a funding slot for the signed-in employer. */
+/**
+ * Atomically check the cooldown and claim a funding slot for the signed-in employer. Returns a
+ * result instead of throwing: errors thrown in a nested mutation reach the browser as a generic
+ * "Server Error" in production.
+ */
 export const claimFunding = internalMutation({
   args: { address: v.string() },
-  returns: v.union(v.null(), v.string()),
+  returns: v.union(
+    v.object({ kind: v.literal("notEmployer") }),
+    v.object({ kind: v.literal("wait"), minutes: v.number() }),
+    v.object({ kind: v.literal("ok"), treasury: v.string() }),
+  ),
   handler: async (ctx, { address }) => {
     const employer = await ctx.db
       .query("employers")
       .withIndex("by_treasuryAddress", (q) => q.eq("treasuryAddress", address))
       .unique();
-    if (!employer) return null;
+    if (!employer) return { kind: "notEmployer" as const };
     const now = Date.now();
     if (employer.lastFundedAt && now - employer.lastFundedAt < COOLDOWN_MS) {
-      throw new ConvexError("Funds were added a few minutes ago. Try again later.");
+      const minutes = Math.ceil((COOLDOWN_MS - (now - employer.lastFundedAt)) / 60_000);
+      return { kind: "wait" as const, minutes };
     }
     await ctx.db.patch("employers", employer._id, { lastFundedAt: now });
-    return employer.treasuryAddress;
+    return { kind: "ok" as const, treasury: employer.treasuryAddress };
   },
 });
 
@@ -65,10 +74,16 @@ export const fundTreasury = action({
   handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new ConvexError("Not signed in");
-    const treasury = await ctx.runMutation(internal.faucet.claimFunding, {
+    const claim = await ctx.runMutation(internal.faucet.claimFunding, {
       address: identity.subject,
     });
-    if (!treasury) throw new ConvexError("Not an employer");
+    if (claim.kind === "notEmployer") throw new ConvexError("Not an employer");
+    if (claim.kind === "wait") {
+      throw new ConvexError(
+        `Test funds were just added. Try again in ${claim.minutes} minute${claim.minutes === 1 ? "" : "s"}.`,
+      );
+    }
+    const treasury = claim.treasury;
 
     const { publicClient, walletClient } = clients(env.FAUCET_PRIVATE_KEY);
     const to = treasury as Hex;

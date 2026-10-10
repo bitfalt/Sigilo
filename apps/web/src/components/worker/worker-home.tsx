@@ -7,11 +7,11 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useEffect, useState } from "react";
 
 import { useKeys, useSigilo } from "@/components/sigilo-provider";
+import { useWorkerAccess } from "@/components/worker/use-worker-access";
 import { Button } from "@/components/ui/button";
-import { type WorkerKeys, workerKeysFromPrf } from "@/lib/identity";
-import { getPrf, passkeyErrorMessage } from "@/lib/passkeys";
+import type { WorkerKeys } from "@/lib/identity";
+import { passkeyErrorMessage } from "@/lib/passkeys";
 import { periodLabel } from "@/lib/periods";
-import { saveIdentity, useKnownIdentity } from "@/lib/public-identity";
 import { formatCents, formatUsd, loadWallet, type Wallet } from "@/lib/wallet";
 
 import { api } from "../../../convex/_generated/api";
@@ -22,27 +22,16 @@ export function WorkerHome() {
 }
 
 function WorkerUnlock() {
-  const { setKeys } = useSigilo();
-  const known = useKnownIdentity("worker");
+  const { known, create, signIn } = useWorkerAccess();
+  const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // With a remembered passkey, go straight to it; otherwise let the browser offer any Sigilo
-  // passkey it can reach (e.g. synced from another device: the stateless path).
-  async function unlock(useKnown: boolean) {
+  async function run(action: () => Promise<unknown>) {
     setBusy(true);
     setError(null);
     try {
-      const credential = useKnown && known ? known : undefined;
-      const { credentialId, prf } = await getPrf("account", credential);
-      const keys = workerKeysFromPrf(prf);
-      saveIdentity({
-        role: "worker",
-        credentialId,
-        address: keys.address,
-        displayName: credential?.displayName ?? "",
-      });
-      setKeys(keys);
+      await action();
     } catch (e) {
       setError(passkeyErrorMessage(e));
     } finally {
@@ -57,10 +46,14 @@ function WorkerUnlock() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Welcome back{known.displayName ? `, ${known.displayName}` : ""}
           </h1>
-          <Button size="lg" onClick={() => unlock(true)} disabled={busy}>
+          <Button size="lg" onClick={() => run(() => signIn(true))} disabled={busy}>
             {busy ? "Opening your account…" : "Sign in with passkey"}
           </Button>
-          <button className="text-sm underline" onClick={() => unlock(false)} disabled={busy}>
+          <button
+            className="text-sm underline"
+            onClick={() => run(() => signIn(false))}
+            disabled={busy}
+          >
             Use a different account
           </button>
         </>
@@ -68,15 +61,34 @@ function WorkerUnlock() {
         <>
           <h1 className="text-2xl font-semibold tracking-tight">Your Sigilo account</h1>
           <p className="text-muted-foreground text-sm">
-            New here? Open the invite link your employer sent you. It creates your account in one
-            step.
+            Get paid privately and prove your income without showing your salary. Your account is
+            secured with a passkey, so there&apos;s no password.
           </p>
-          <Button size="lg" variant="outline" onClick={() => unlock(false)} disabled={busy}>
-            {busy ? "Opening your account…" : "Sign in with a passkey"}
+          <label className="flex flex-col gap-1 text-sm">
+            Your name
+            <input
+              className="rounded-md border px-3 py-2"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              autoComplete="name"
+            />
+          </label>
+          <Button
+            size="lg"
+            onClick={() => run(() => create(name))}
+            disabled={busy || name.trim().length < 2}
+          >
+            {busy ? "Creating your account…" : "Create my account"}
           </Button>
+          <button
+            className="text-sm underline"
+            onClick={() => run(() => signIn(false))}
+            disabled={busy}
+          >
+            Sign in with a passkey
+          </button>
           <p className="text-muted-foreground text-xs">
-            On a new phone or computer? Your account comes with you: sign in with the passkey saved
-            in your iCloud Keychain or Google Password Manager.
+            Got an invite from your employer? Open their link; it joins you to their payroll.
           </p>
         </>
       )}

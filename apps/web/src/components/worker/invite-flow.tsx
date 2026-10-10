@@ -10,11 +10,12 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { useKeys, useSigilo } from "@/components/sigilo-provider";
+import { useKeys } from "@/components/sigilo-provider";
+import { useWorkerAccess } from "@/components/worker/use-worker-access";
 import { Button } from "@/components/ui/button";
-import { passportSecretFromPrf, workerKeysFromPrf } from "@/lib/identity";
-import { createPasskey, getPrf, passkeyErrorMessage } from "@/lib/passkeys";
-import { loadIdentity, saveIdentity } from "@/lib/public-identity";
+import { passportSecretFromPrf } from "@/lib/identity";
+import { getPrf, passkeyErrorMessage } from "@/lib/passkeys";
+import { loadIdentity } from "@/lib/public-identity";
 
 import { api } from "../../../convex/_generated/api";
 
@@ -25,7 +26,7 @@ export function InviteFlow({ code }: { code: string }) {
   const inviteCodeHash = useMemo(() => hashInviteCode(code), [code]);
   const info = useQuery(api.employees.inviteInfo, { inviteCodeHash });
   const keys = useKeys("worker");
-  const { setKeys } = useSigilo();
+  const { known, create, signIn } = useWorkerAccess();
   const { isAuthenticated } = useConvexAuth();
   const register = useMutation(api.accounts.register);
   const accept = useMutation(api.employees.acceptInvite);
@@ -35,26 +36,21 @@ export function InviteFlow({ code }: { code: string }) {
   const [step, setStep] = useState<Step>("welcome");
   const [error, setError] = useState<string | null>(null);
 
-  async function createAccount() {
+  // One passkey per person: reuse the account already open in this tab or remembered on this
+  // device, and only create a new one for first-timers.
+  async function join(how: "open" | "known" | "any" | "create") {
     setError(null);
     try {
-      const created = await createPasskey("account", name.trim() || "Sigilo account");
-      const next = workerKeysFromPrf(created.prf);
-      saveIdentity({
-        role: "worker",
-        credentialId: created.credentialId,
-        ...(created.transports ? { transports: created.transports } : {}),
-        address: next.address,
-        displayName: name.trim(),
-      });
-      setKeys(next);
+      if (how === "known") await signIn(true);
+      else if (how === "any") await signIn(false);
+      else if (how === "create") await create(name);
       setStep("joining");
     } catch (e) {
       setError(passkeyErrorMessage(e));
     }
   }
 
-  // Once Convex has a session for the new keys: register them and accept the invite.
+  // Once Convex has a session for the account: register its keys and accept the invite.
   useEffect(() => {
     if (step !== "joining" || !keys || !isAuthenticated) return;
     (async () => {
@@ -110,15 +106,38 @@ export function InviteFlow({ code }: { code: string }) {
           <p className="text-muted-foreground text-sm">
             Your salary stays private. Only you can see it.
           </p>
-          <input
-            className="rounded-md border px-3 py-2 text-sm"
-            placeholder="Your name (stays on this device)"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Button size="lg" onClick={createAccount}>
-            Create my account
-          </Button>
+          {keys ? (
+            <Button size="lg" onClick={() => join("open")}>
+              Join {info.employerName}
+            </Button>
+          ) : known ? (
+            <>
+              <Button size="lg" onClick={() => join("known")}>
+                Sign in with passkey to join
+              </Button>
+              <button className="text-sm underline" onClick={() => join("any")}>
+                Use a different account
+              </button>
+            </>
+          ) : (
+            <>
+              <label className="flex flex-col gap-1 text-sm">
+                Your name
+                <input
+                  className="rounded-md border px-3 py-2"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
+                />
+              </label>
+              <Button size="lg" onClick={() => join("create")} disabled={name.trim().length < 2}>
+                Create my account
+              </Button>
+              <button className="text-sm underline" onClick={() => join("any")}>
+                I already have a Sigilo account
+              </button>
+            </>
+          )}
         </>
       )}
       {step === "joining" && <p className="text-sm">Setting up your private account…</p>}

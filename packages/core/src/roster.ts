@@ -17,6 +17,11 @@ export interface RosterEntry {
   name: string;
   /** Gross monthly salary, USD cents. */
   monthlySalaryCents: number;
+  /**
+   * The invite code, kept only inside this ciphertext so the employer can re-share the link;
+   * the server stores just its hash.
+   */
+  inviteCode?: string;
 }
 
 export class RosterDecryptionError extends Error {

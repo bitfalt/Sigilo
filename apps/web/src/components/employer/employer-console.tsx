@@ -13,6 +13,7 @@ import { useKeys, useSigilo } from "@/components/sigilo-provider";
 import { Button } from "@/components/ui/button";
 import { ausdBalances, publicClient } from "@/lib/chain";
 import { EXPLORER_URL } from "@/lib/config";
+import { errorMessage } from "@/lib/errors";
 import { type EmployerKeys, employerKeysFromPrf } from "@/lib/identity";
 import { createPasskey, getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { type PayrollStep, runPayroll } from "@/lib/payroll-client";
@@ -198,7 +199,7 @@ function Treasury({ address }: { address: `0x${string}` }) {
       setMessage("Funds added.");
       setVersion((v) => v + 1);
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : "Couldn't add funds.");
+      setMessage(errorMessage(e, "Couldn't add test funds. Try again."));
     } finally {
       setBusy(false);
     }
@@ -221,28 +222,86 @@ function Treasury({ address }: { address: `0x${string}` }) {
   );
 }
 
+function inviteUrl(code: string): string {
+  return `${window.location.origin}/app/invite/${code}`;
+}
+
+/** Copy (and, on phones, share) an invite link. */
+function InviteActions({ code, name }: { code: string; name: string }) {
+  const [copied, setCopied] = useState(false);
+  const [showLink, setShowLink] = useState(false);
+  const canShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(inviteUrl(code));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setShowLink(true); // Clipboard blocked: show the link to copy by hand.
+    }
+  }
+
+  return (
+    <span className="flex flex-wrap items-center gap-2">
+      {showLink && <code className="text-xs break-all">{inviteUrl(code)}</code>}
+      <Button size="sm" variant="outline" onClick={copy}>
+        {copied ? "Copied" : "Copy invite link"}
+      </Button>
+      {canShare && (
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            navigator
+              .share({
+                title: "Join your team on Sigilo",
+                text: `${name}, get paid with Sigilo`,
+                url: inviteUrl(code),
+              })
+              .catch(() => {})
+          }
+        >
+          Share
+        </Button>
+      )}
+    </span>
+  );
+}
+
 function Employees({ keys, employerId }: { keys: EmployerKeys; employerId: string }) {
   const roster = useQuery(api.employees.list);
   const add = useMutation(api.employees.add);
   const [name, setName] = useState("");
   const [salary, setSalary] = useState("");
-  const [inviteLink, setInviteLink] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function addEmployee() {
-    const cents = Math.round(Number(salary) * 100);
-    if (!name.trim() || !Number.isFinite(cents) || cents <= 0) return;
-    const invite = newInviteCode();
-    await add({
-      roster: encryptRosterEntry(
-        { name: name.trim(), monthlySalaryCents: cents },
-        keys.rosterKey,
-        employerId,
-      ),
-      inviteCodeHash: invite.hash,
-    });
-    setInviteLink(`${window.location.origin}/app/invite/${invite.code}`);
-    setName("");
-    setSalary("");
+    const cents = Math.round(Number(salary.replace(/[$,\s]/g, "")) * 100);
+    if (!name.trim()) return setError("Add the person's name.");
+    if (!Number.isFinite(cents) || cents <= 0) return setError("Add a monthly salary in USD.");
+    setError(null);
+    setBusy(true);
+    try {
+      // The code goes inside the encrypted roster entry so the link can be shared again later;
+      // the server only ever sees its hash.
+      const invite = newInviteCode();
+      await add({
+        roster: encryptRosterEntry(
+          { name: name.trim(), monthlySalaryCents: cents, inviteCode: invite.code },
+          keys.rosterKey,
+          employerId,
+        ),
+        inviteCodeHash: invite.hash,
+      });
+      setName("");
+      setSalary("");
+    } catch (e) {
+      setError(errorMessage(e, "Couldn't add this person. Try again."));
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -251,44 +310,61 @@ function Employees({ keys, employerId }: { keys: EmployerKeys; employerId: strin
       <div className="flex flex-col divide-y rounded-lg border">
         {(roster ?? []).map((row) => {
           const entry = decryptRosterEntry(row.roster, keys.rosterKey, employerId);
+          const status =
+            row.status === "active"
+              ? row.passportCommitment
+                ? "Joined, Income Passport active"
+                : "Joined"
+              : "Invite sent";
           return (
-            <div key={row._id} className="flex justify-between p-3 text-sm">
-              <span>{entry.name}</span>
-              <span className="text-muted-foreground">
-                {formatCents(entry.monthlySalaryCents)}/mo ·{" "}
-                {row.status === "active"
-                  ? row.passportCommitment
-                    ? "Joined · Passport active"
-                    : "Joined"
-                  : "Invited"}
-              </span>
+            <div
+              key={row._id}
+              className="flex flex-col gap-2 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p className="font-medium">{entry.name}</p>
+                <p className="text-muted-foreground">
+                  {formatCents(entry.monthlySalaryCents)} a month. {status}.
+                </p>
+              </div>
+              {row.status === "invited" && entry.inviteCode && (
+                <InviteActions code={entry.inviteCode} name={entry.name} />
+              )}
             </div>
           );
         })}
-        {roster?.length === 0 && <p className="text-muted-foreground p-3 text-sm">No one yet.</p>}
+        {roster?.length === 0 && (
+          <p className="text-muted-foreground p-3 text-sm">
+            Add someone below to create their invite link.
+          </p>
+        )}
       </div>
-      <div className="flex gap-2">
-        <input
-          className="flex-1 rounded-md border px-3 py-2 text-sm"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <input
-          className="w-36 rounded-md border px-3 py-2 text-sm"
-          placeholder="Monthly salary (USD)"
-          inputMode="decimal"
-          value={salary}
-          onChange={(e) => setSalary(e.target.value)}
-        />
-        <Button onClick={addEmployee}>Add</Button>
+
+      <div className="flex flex-col gap-2 rounded-lg border p-3 sm:flex-row sm:items-end">
+        <label className="flex flex-1 flex-col gap-1 text-sm">
+          Name
+          <input
+            className="rounded-md border px-3 py-2"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            autoComplete="off"
+          />
+        </label>
+        <label className="flex flex-col gap-1 text-sm sm:w-44">
+          Monthly salary (USD)
+          <input
+            className="rounded-md border px-3 py-2"
+            inputMode="decimal"
+            placeholder="2400"
+            value={salary}
+            onChange={(e) => setSalary(e.target.value)}
+          />
+        </label>
+        <Button onClick={addEmployee} disabled={busy}>
+          {busy ? "Adding…" : "Add and create invite"}
+        </Button>
       </div>
-      {inviteLink && (
-        <div className="rounded-lg border p-3 text-sm">
-          <p className="mb-1 font-medium">Invite link (copy it now, it&apos;s shown only once)</p>
-          <code className="break-all text-xs">{inviteLink}</code>
-        </div>
-      )}
+      {error && <p className="text-destructive text-sm">{error}</p>}
     </section>
   );
 }
@@ -326,7 +402,7 @@ function Payroll({
         onStep: setStep,
       });
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Payroll didn't go through.");
+      setError(errorMessage(e, "Payroll didn't go through. Try again."));
       setStep(null);
     }
   }
