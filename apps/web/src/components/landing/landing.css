@@ -1,0 +1,179 @@
+/* Landing page styles (global, namespaced "lp-"; CSS modules don't survive this repo's
+   Turbopack CSS rule). Tokens: security paper, banknote ink, guilloche green, ultramarine. */
+.lp-page {
+  --paper: #e8eee9;
+  --paper-shade: #dbe5de;
+  --slip: #fbfcfa;
+  --ink: #0f2a20;
+  --muted: #4f6359;
+  --guilloche: #3f7f67;
+  --seal: #2a3cb0;
+  --seal-ink: #f4f6ff;
+
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Engraved, banknote-like display type: Archivo at its widest. */
+.lp-display {
+  font-stretch: 125%;
+  font-weight: 780;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.lp-heading {
+  font-stretch: 118%;
+  font-weight: 720;
+  letter-spacing: -0.015em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.lp-lede {
+  color: var(--muted);
+  text-wrap: pretty;
+}
+
+.lp-muted {
+  color: var(--muted);
+}
+
+/* Perforation between sections, like the tear-off stub of a payslip. */
+.lp-perforation {
+  height: 8px;
+  background-image: radial-gradient(circle, var(--ink) 1.3px, transparent 1.6px);
+  background-size: 11px 8px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+  opacity: 0.35;
+}
+
+/* Actions: ultramarine security ink. */
+.lp-primary,
+.lp-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 1.25rem;
+  border-radius: 999px;
+  font-weight: 650;
+  font-size: 0.975rem;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
+}
+
+.lp-primary {
+  background: var(--seal);
+  color: var(--seal-ink);
+}
+
+.lp-primary:hover {
+  background: #1f2d8c;
+}
+
+.lp-secondary {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  color: var(--ink);
+}
+
+.lp-secondary:hover {
+  background: var(--paper-shade);
+}
+
+.lp-primary:focus-visible,
+.lp-secondary:focus-visible,
+.lp-link:focus-visible {
+  outline: 3px solid var(--seal);
+  outline-offset: 3px;
+}
+
+.lp-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
+  border-radius: 2px;
+}
+
+/* The rosette: fine lines that draw themselves once. */
+/* Drawn by default; the animation only supplies the hidden starting state while it runs
+   (fill-mode backwards), so the rosette still shows if animations never run. */
+.lp-line {
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: draw 2.4s cubic-bezier(0.65, 0, 0.35, 1) backwards;
+  animation-delay: calc(var(--i) * 70ms);
+}
+
+.lp-band {
+  stroke: var(--guilloche);
+  stroke-width: 0.7;
+  opacity: 0.55;
+}
+
+.lp-rosette {
+  stroke: var(--seal);
+  stroke-width: 0.8;
+  opacity: 0.7;
+}
+
+.lp-inner {
+  stroke: var(--guilloche);
+  stroke-width: 0.6;
+  opacity: 0.6;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lp-line {
+    animation: none;
+  }
+}
+
+/* The sealed payslip in the hero. */
+.lp-slip {
+  background: var(--slip);
+  box-shadow:
+    0 1px 0 rgba(15, 42, 32, 0.06),
+    0 18px 40px -24px rgba(15, 42, 32, 0.45);
+  border-radius: 6px;
+}
+
+.lp-slip-stub {
+  border-top: 2px dashed rgba(15, 42, 32, 0.22);
+}
+
+/* Passport stamp: ultramarine ink, double rule, slightly rotated and translucent. */
+.lp-stamp {
+  color: var(--seal);
+  border: 2px solid currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 10px;
+  background: rgba(244, 246, 255, 0.82);
+  transform: rotate(-4deg);
+}
+
+/* What the internet sees: pieces that can't be traced to anyone. */
+.lp-ledger-row {
+  border-bottom: 1px solid rgba(15, 42, 32, 0.12);
+}
+
+.lp-panel {
+  background: var(--paper-shade);
+  border-radius: 8px;
+}
