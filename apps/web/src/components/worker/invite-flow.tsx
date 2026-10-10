@@ -12,7 +12,12 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useKeys } from "@/components/sigilo-provider";
 import { useWorkerAccess } from "@/components/worker/use-worker-access";
-import { Button } from "@/components/ui/button";
+import {
+  InviteJoiningView,
+  InviteNoticeView,
+  InvitePassportView,
+  InviteWelcomeView,
+} from "@/components/worker/worker-views";
 import { passportSecretFromPrf } from "@/lib/identity";
 import { getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { loadIdentity } from "@/lib/public-identity";
@@ -83,85 +88,48 @@ export function InviteFlow({ code }: { code: string }) {
     }
   }
 
-  if (info === undefined) return <Centered>Opening your invite…</Centered>;
-  if (info === null) return <Centered>This invite link isn&apos;t valid.</Centered>;
+  if (info === undefined) return <InviteNoticeView waiting title="Opening your invite…" />;
+  if (info === null) {
+    return (
+      <InviteNoticeView
+        title="This invite link isn't valid."
+        body="Ask your employer to send you a new one."
+      />
+    );
+  }
   if (!info.open && step === "welcome") {
     return (
-      <Centered>
-        This invite was already used.{" "}
-        <a className="underline" href="/app">
-          Open your account
-        </a>
-      </Centered>
+      <InviteNoticeView
+        title="This invite was already used."
+        body="If you joined with it, open your account. If not, ask your employer for a new link."
+        action={{ href: "/app", label: "Open your account" }}
+      />
+    );
+  }
+
+  if (step === "joining") return <InviteJoiningView employerName={info.employerName} />;
+  if (step === "passport" || step === "activating" || step === "done") {
+    return (
+      <InvitePassportView
+        activating={step === "activating"}
+        done={step === "done"}
+        error={error}
+        onActivate={activatePassport}
+      />
     );
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-6">
-      {step === "welcome" && (
-        <>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {info.employerName} pays you with Sigilo
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Your salary stays private. Only you can see it.
-          </p>
-          {keys ? (
-            <Button size="lg" onClick={() => join("open")}>
-              Join {info.employerName}
-            </Button>
-          ) : known ? (
-            <>
-              <Button size="lg" onClick={() => join("known")}>
-                Sign in with passkey to join
-              </Button>
-              <button className="text-sm underline" onClick={() => join("any")}>
-                Use a different account
-              </button>
-            </>
-          ) : (
-            <>
-              <label className="flex flex-col gap-1 text-sm">
-                Your name
-                <input
-                  className="rounded-md border px-3 py-2"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  autoComplete="name"
-                />
-              </label>
-              <Button size="lg" onClick={() => join("create")} disabled={name.trim().length < 2}>
-                Create my account
-              </Button>
-              <button className="text-sm underline" onClick={() => join("any")}>
-                I already have a Sigilo account
-              </button>
-            </>
-          )}
-        </>
-      )}
-      {step === "joining" && <p className="text-sm">Setting up your private account…</p>}
-      {(step === "passport" || step === "activating") && (
-        <>
-          <h1 className="text-2xl font-semibold tracking-tight">Activate your Income Passport</h1>
-          <p className="text-muted-foreground text-sm">
-            Prove what you earn to lenders and landlords without showing your salary or your
-            employer.
-          </p>
-          <Button size="lg" onClick={activatePassport} disabled={step === "activating"}>
-            {step === "activating" ? "Preparing your passport…" : "Activate Income Passport"}
-          </Button>
-        </>
-      )}
-      {error && <p className="text-destructive text-sm">{error}</p>}
-    </main>
-  );
-}
-
-function Centered({ children }: { children: React.ReactNode }) {
-  return (
-    <main className="flex flex-1 items-center justify-center px-6 text-center text-sm">
-      <p>{children}</p>
-    </main>
+    <InviteWelcomeView
+      employerName={info.employerName}
+      access={keys ? "open" : known ? "known" : "new"}
+      name={name}
+      onNameChange={setName}
+      error={error}
+      onJoinOpen={() => join("open")}
+      onJoinKnown={() => join("known")}
+      onJoinAny={() => join("any")}
+      onCreate={() => join("create")}
+    />
   );
 }
