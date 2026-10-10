@@ -9,6 +9,7 @@ import {
   type ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -55,6 +56,9 @@ function useSigiloAuth() {
 
 const convex = new ConvexReactClient(CONVEX_URL || "https://placeholder.convex.cloud");
 
+/** Lock the account after this long without activity. */
+const IDLE_LOCK_MS = 15 * 60 * 1000;
+
 export function SigiloProvider({ children }: { children: ReactNode }) {
   const [keys, setKeysState] = useState<Keys | null>(null);
   const keysRef = useRef<Keys | null>(null);
@@ -74,6 +78,28 @@ export function SigiloProvider({ children }: { children: ReactNode }) {
     tokenRef.current = null;
     setKeysState(null);
   }, []);
+
+  // Scoped session (Mera): after 15 minutes without a tap, key press or scroll, end the signing
+  // session and wipe the keys. The passkey opens it again; nothing was stored.
+  useEffect(() => {
+    if (!keys) return;
+    let last = Date.now();
+    const touch = () => {
+      last = Date.now();
+    };
+    const events = ["pointerdown", "keydown", "scroll", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, touch, { passive: true }));
+    const check = () => {
+      if (Date.now() - last > IDLE_LOCK_MS) lock();
+    };
+    const timer = window.setInterval(check, 30_000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, touch));
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [keys, lock]);
 
   const getToken = useCallback(
     async (forceRefresh: boolean) => {
