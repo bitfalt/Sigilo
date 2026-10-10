@@ -3,7 +3,10 @@
 export const RP_ID = process.env.NEXT_PUBLIC_RP_ID ?? "localhost";
 export const RP_NAME = process.env.NEXT_PUBLIC_RP_NAME ?? "Sigilo";
 export const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL ?? "";
-export const CONVEX_SITE_URL = process.env.NEXT_PUBLIC_CONVEX_SITE_URL ?? "";
+/** HTTP actions (sign-in). `convex deploy` only sets the cloud URL, so derive it when missing. */
+export const CONVEX_SITE_URL =
+  process.env.NEXT_PUBLIC_CONVEX_SITE_URL ??
+  CONVEX_URL.replace(/\.convex\.cloud\/?$/, ".convex.site");
 export const MONAD_RPC_URL =
   process.env.NEXT_PUBLIC_MONAD_RPC_URL ?? "https://testnet-rpc.monad.xyz";
 export const EXPLORER_URL =
