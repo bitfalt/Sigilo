@@ -1,9 +1,5 @@
 {
   "mcpServers": {
-    "unlink-docs": {
-      "type": "http",
-      "url": "https://docs.unlink.xyz/mcp"
-    },
     "monad-docs": {
       "type": "http",
       "url": "https://docs.monad.xyz/mcp"

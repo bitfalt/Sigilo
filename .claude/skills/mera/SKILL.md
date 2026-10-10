@@ -59,7 +59,7 @@ Salts are **namespaces**: a different salt yields unrelated output. Each salt co
 
 | Salt (32 bytes) | Prompted | Derived |
 |---|---|---|
-| `SALT_ACCOUNT = sha256("sigilo/account/v1")` | sign-up / sign-in (once per session) | EVM key, Unlink seed, payslip X25519 keypair |
+| `SALT_ACCOUNT = sha256("sigilo/account/v1")` | sign-up / sign-in (once per session) | EVM key, stealth spend + view keys, payslip X25519 keypair |
 | `SALT_PASSPORT = sha256("sigilo/passport/v1")` | **step-up** only (share passport, accept advance, first passport activation) | `passportSecret` (BN254 field element) |
 
 Derivations from a PRF output (`prf`, 32 bytes):
@@ -84,10 +84,11 @@ export function deriveEvmPrivateKey(prfAccount: Uint8Array): Uint8Array {
   return node.privateKey;
 }
 
-// 2) Unlink seed — 64 bytes for `account.fromSeed` (from @unlink-xyz/sdk/browser).
-//    Seed-backed accounts are required for Unlink `execute()`.
-export const deriveUnlinkSeed = (prfAccount: Uint8Array) =>
-  hkdf(sha256, prfAccount, undefined, enc.encode("sigilo/unlink/v1"), 64);
+// 2) Stealth spend + view keys — secp256k1 scalars behind every one-time account (SPEC §6.1).
+//    48 HKDF bytes reduced without bias: mapHashToField(wide, secp256k1.Point.Fn.ORDER).
+//    Labels "sigilo/stealth-spend/v1" and "sigilo/stealth-view/v1". The label "sigilo/unlink/v1"
+//    is retired (Unlink was removed); never reuse it.
+//    Real implementation: deriveStealthKeys in packages/core/src/keys.ts.
 
 // 3) Payslip keypair — X25519 secret; employer encrypts payslips to the public key.
 export const derivePayslipSecret = (prfAccount: Uint8Array) =>
@@ -105,7 +106,7 @@ export function derivePassportSecret(prfPassport: Uint8Array): bigint {
 
 Rules:
 - **Never persist secrets** (PRF outputs, private keys, seeds, passport secret) to localStorage, IndexedDB, cookies, or the server. Keep them in memory; zero/`end()` on logout.
-- It is fine to cache **public identity** (EVM address, Unlink address, payslip public key, credentialId) in localStorage to render a "locked" state after reload; unlocking re-runs `getPasskeyPrfOutput` (see `demos/web/src/account.ts` pattern: `none | locked | unlocked`).
+- It is fine to cache **public identity** (EVM address, payment profile, payslip public key, credentialId) in localStorage to render a "locked" state after reload; unlocking re-runs `getPasskeyPrfOutput` (see `demos/web/src/account.ts` pattern: `none | locked | unlocked`).
 - Wipe `prf` byte arrays (`.fill(0)`) after deriving.
 - Keep derivation code in `packages/core` with unit tests that pin outputs for a fixed fake PRF value (regression guard: changing a label silently orphans every account).
 
