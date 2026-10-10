@@ -286,6 +286,32 @@ contract SigiloPayTest is Test {
         pay.sendHome(auths, intent);
     }
 
+    /// Any split across the three pieces pays exactly the total and leaves exact remainders.
+    function testFuzz_collect_anySplit(uint256 a, uint256 b, uint256 c, bool home) public {
+        a = bound(a, 0, 1_000e6);
+        b = bound(b, 0, 1_000e6);
+        c = bound(c, 1, 200e6);
+        uint256 total = a + b + c;
+        uint8 action = home ? pay.ACTION_SEND_HOME() : pay.ACTION_COLLECT();
+        SigiloPay.Intent memory intent = _intent(action, mom, total);
+        SigiloPay.Authorization[] memory auths = new SigiloPay.Authorization[](3);
+        auths[0] = _sign(pieceKeys[0], a, intent);
+        auths[1] = _sign(pieceKeys[1], b, intent);
+        auths[2] = _sign(pieceKeys[2], c, intent);
+
+        if (home) {
+            assertEq(pay.sendHome(auths, intent), total * 1e12);
+            assertEq(ctk.balanceOf(mom), total * 1e12);
+        } else {
+            pay.collect(auths, intent);
+            assertEq(ausd.balanceOf(mom), total);
+        }
+        assertEq(ausd.balanceOf(pieces[0]), 1_000e6 - a);
+        assertEq(ausd.balanceOf(pieces[1]), 1_000e6 - b);
+        assertEq(ausd.balanceOf(pieces[2]), 200e6 - c);
+        assertEq(ausd.balanceOf(address(pay)), 0);
+    }
+
     function test_constructor_whitelistsItself() public view {
         assertTrue(pair.approvedSwapper(address(pay)));
     }
