@@ -54,7 +54,7 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 | Surface | Route | Device | Custody |
 |---|---|---|---|
 | Worker app (PWA) | `/app` | Mobile-first, installable | **Non-custodial.** Every key derives from the worker's passkey (Mera). Money sits in one-time accounts only her keys can spend |
-| Employer dashboard | `/employer` | Desktop | **Custodial treasury.** A server-held AUSD account, Deel-style |
+| Employer dashboard | `/employer` | Desktop | **Non-custodial, blind server.** The admin's passkey (Mera) holds the treasury and the roster key; payroll is assembled in the browser |
 | Lender console | `/lender` | Desktop | Demo lender key held server-side |
 | Public verification page | `/v/[requestId]` | Any | — |
 | Landing | `/` | Any | — |
@@ -110,18 +110,20 @@ Judging rubric reminder (Track 02): Technical Execution 20%, **Design & Craft 20
 No third-party registration and no gas: every on-chain action of a worker is a signed message that Sigilo's relayer submits (§9 `SigiloPay`).
 
 ### F2. Employer setup (P0)
-1. The demo employer "Acme Labs" is pre-seeded and marked **verified** (KYB stand-in) in `SigiloRegistry`.
-2. The treasury is a server-held account, funded with testnet AUSD from the Agora faucet (`requestFunds`). It approves `SigiloPay` once.
-3. The employer adds employees and shares the invite links.
+1. The employer admin opens `/employer` and taps **Continue with Face ID** (Mera, salt `S_EMPLOYER`, one prompt). That derives the **treasury account** and the **roster key** (§6).
+2. The demo employer "Acme Labs" is marked **verified** (KYB stand-in) in `SigiloRegistry` by the operator.
+3. **Add funds** (testnet): Sigilo's demo faucet sends testnet AUSD and a little MON to the treasury.
+4. The employer adds employees. Name and salary are **encrypted in the browser with the roster key**; the server stores ciphertext and a hash of the invite code. The employer shares the invite links.
 
 ### F3. Payroll run (P0)
+Everything below runs **in the employer's browser**; the server only sees the results listed in step 5–6.
 1. The employer clicks **Run payroll** for period `P` (a month index, §7).
-2. The backend computes net pay per employee (salary − active deduction installments).
+2. The browser decrypts the roster and computes net pay per employee (salary − active deduction installments).
 3. **Pieces:** each net pay is split into fixed denominations (1-2-5 series from $1,000 down to $0.01, greedy; $2,400 → 1,000 + 1,000 + 200 + 200). Each piece goes to a **fresh one-time account** derived from the worker's payment profile with a fresh random key (§6.1).
-4. **Payout:** one `SigiloPay.disperse(AUSD, recipients[], amounts[])` from the treasury, with every piece of every employee shuffled together. Active installments go to the AdvanceVault (`repay`) in the same run (P1).
-5. **Payroll commitment:** for each employee *i*, the backend builds the leaf
-   `leaf_i = H(C_i, employerId, P, gross_i, salt_i)` (gross amount in USD cents, random `salt_i`). It then builds the run tree, gets `runRoot`, and appends `regLeaf = H(employerId, P, runRoot)` to the global registry tree. It publishes the new `registryRoot` on-chain (`SigiloRegistry.publishRoot`).
-6. **Payslips:** for each employee, the backend encrypts `{period, gross, deductions, net, employerName, pieces: [{account, ephemeralKey, amount}], leaf preimage, run Merkle path, runRoot}` to the employee's payslip public key and stores the ciphertext as a **receipt**. Every incoming payment (payroll, advance, money from family) arrives with a receipt like this.
+4. **Payout:** the treasury approves exactly the run total and calls `SigiloPay.disperse(recipients[], amounts[])` (signed with the Mera session), with every piece of every employee shuffled together. Active installments go to the AdvanceVault (`repay`) in the same run (P1).
+5. **Payroll commitment:** for each employee *i*, the browser builds the leaf
+   `leaf_i = H(C_i, employerId, P, gross_i, salt_i)` (gross amount in USD cents, random `salt_i`) and the run tree, and sends only `runRoot` to the server. The operator appends `regLeaf = H(employerId, P, runRoot)` to the global registry tree and publishes the new `registryRoot` on-chain (`SigiloRegistry.publishRoot`).
+6. **Payslips:** for each employee, the browser encrypts `{period, gross, deductions, net, employerName, pieces: [{account, ephemeralKey, amount}], leaf preimage, run Merkle path, runRoot}` to the employee's payslip public key and uploads the ciphertext as a **receipt**. The ephemeral keys and the piece-to-person mapping exist nowhere else. Every incoming payment (payroll, advance, money from family) arrives with a receipt like this.
 
 ### F4. Worker sees pay (P0)
 The client decrypts her receipts, re-derives each one-time account (and checks it matches), and reads all their AUSD balances in one multicall. Balance = the sum. History comes from the receipts. Copy: *"You got paid · $2,400 · Oct 2026"*. She never sees pieces, accounts, "transaction", "token" or "wallet".
@@ -179,7 +181,18 @@ Hidden behind **Settings → Advanced**, a Face ID step-up and an explicit warni
 | Advance disbursement | Public amount to a fresh one-time account |
 | An active advance | Worker, lender, employer (needs it to deduct; same as real-world payroll deduction) |
 
+**What Sigilo's servers store ("blind server").** A full database leak reveals:
+
+| Stored | Readable by a thief? |
+|---|---|
+| Roster: employee names and salaries | **No.** Encrypted with the employer's passkey-derived roster key |
+| Payslips and other receipts | **No.** Encrypted to each recipient |
+| Which one-time accounts belong to whom | **Never stored** (only inside receipts) |
+| Public keys, session addresses, passport commitments, registry leaves, proofs | Yes, but they reveal nothing about pay or identity |
+| Row counts (employees per employer), run dates and totals, lender thresholds | Yes |
+
 **Known limits and trust assumptions (hackathon scope):**
+- Like any web app, users trust the JavaScript Sigilo serves; a compromised deploy could exfiltrate keys from the browser. Mitigation later: reproducible builds, subresource integrity, a native app.
 - Anonymity set = the employees paid in the same run. A one-person employer leaks that person's net pay. Multi-employer batched payouts (P2) and a shielded pool (roadmap) widen it.
 - Pieces are combined only when spent, never proactively.
 - Sigilo relays all worker actions, so it sees spend intents and could censor them. It cannot redirect or steal funds: every signature binds recipient and amount (§9).
@@ -198,6 +211,7 @@ One passkey, many keys. The PRF output depends on (credential, rpId, salt), and 
 | | | HKDF `info="sigilo/stealth-view/v1"` → secp256k1 scalar `v` | View key: derive and find one-time accounts |
 | | | HKDF `info="sigilo/payslips/v1"` → X25519 keypair | Decrypt payslips and receipts |
 | `S_PASSPORT = sha256("sigilo/passport/v1")` | **Step-up** when sharing a proof or accepting an advance | HKDF `info="sigilo/passport-secret/v1"` → field element | Passport commitment `C = H(passportSecret)`; per-verifier `pseudonym = H(passportSecret, scope)` computed in-circuit |
+| `S_EMPLOYER = sha256("sigilo/employer/v1")` | Employer admin sign-in (one prompt) | HKDF `info="sigilo/employer-treasury/v1"` → secp256k1 key; HKDF `info="sigilo/employer-roster/v1"` → 32-byte key | Treasury account (approve + `SigiloPay.disperse`); encrypts the roster (XChaCha20-Poly1305) |
 
 Retired label (never reuse): `sigilo/unlink/v1`.
 
