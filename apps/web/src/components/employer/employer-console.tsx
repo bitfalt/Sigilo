@@ -17,7 +17,7 @@ import { type EmployerKeys, employerKeysFromPrf } from "@/lib/identity";
 import { createPasskey, getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { type PayrollStep, runPayroll } from "@/lib/payroll-client";
 import { periodLabel, recentPeriods } from "@/lib/periods";
-import { loadIdentity, saveIdentity } from "@/lib/public-identity";
+import { saveIdentity, useBiometricName, useKnownIdentity } from "@/lib/public-identity";
 import { formatCents, formatUsd } from "@/lib/wallet";
 
 import { api } from "../../../convex/_generated/api";
@@ -34,26 +34,32 @@ export function EmployerConsole() {
 
 function EmployerUnlock({ onCreate }: { onCreate(name: string): void }) {
   const { setKeys } = useSigilo();
+  const known = useKnownIdentity("employer");
+  const biometric = useBiometricName();
+  const [mode, setMode] = useState<"auto" | "create">("auto");
   const [company, setCompany] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  async function open(create: boolean) {
+  // create: new passkey on this device. known: straight to the remembered passkey. otherwise:
+  // any Sigilo company passkey the browser can reach (e.g. synced from another device).
+  async function open(how: "create" | "known" | "any") {
     setBusy(true);
     setError(null);
     try {
-      const known = loadIdentity("employer");
-      const { credentialId, prf } = create
-        ? await createPasskey("employer", company.trim())
-        : await getPrf("employer", known?.credentialId);
-      const keys = employerKeysFromPrf(prf);
+      const result =
+        how === "create"
+          ? await createPasskey("employer", company.trim())
+          : await getPrf("employer", how === "known" && known ? known : undefined);
+      const keys = employerKeysFromPrf(result.prf);
       saveIdentity({
         role: "employer",
-        credentialId,
+        credentialId: result.credentialId,
+        ...(result.transports ? { transports: result.transports } : {}),
         address: keys.address,
-        displayName: create ? company.trim() : (known?.displayName ?? ""),
+        displayName: how === "create" ? company.trim() : (known?.displayName ?? ""),
       });
-      if (create) onCreate(company.trim());
+      if (how === "create") onCreate(company.trim());
       setKeys(keys);
     } catch (e) {
       setError(passkeyErrorMessage(e));
@@ -62,27 +68,48 @@ function EmployerUnlock({ onCreate }: { onCreate(name: string): void }) {
     }
   }
 
+  const signingIn = known && mode === "auto";
+
   return (
     <main className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center gap-4 px-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Sigilo for employers</h1>
-      <Button size="lg" onClick={() => open(false)} disabled={busy}>
-        Continue with Face ID
-      </Button>
-      <div className="flex flex-col gap-2 border-t pt-4">
-        <input
-          className="rounded-md border px-3 py-2 text-sm"
-          placeholder="Company name"
-          value={company}
-          onChange={(e) => setCompany(e.target.value)}
-        />
-        <Button
-          variant="outline"
-          onClick={() => open(true)}
-          disabled={busy || company.trim().length < 2}
-        >
-          Create a company account
-        </Button>
-      </div>
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {signingIn
+          ? `Welcome back${known.displayName ? `, ${known.displayName}` : ""}`
+          : "Sigilo for employers"}
+      </h1>
+      {signingIn ? (
+        <>
+          <Button size="lg" onClick={() => open("known")} disabled={busy}>
+            {busy ? "Opening your company…" : `Continue with ${biometric}`}
+          </Button>
+          <button className="text-sm underline" onClick={() => setMode("create")} disabled={busy}>
+            Create another company
+          </button>
+        </>
+      ) : (
+        <>
+          <p className="text-muted-foreground text-sm">
+            Create your company account. Your {biometric} keeps your payroll and your team&apos;s
+            salaries private, even from us.
+          </p>
+          <input
+            className="rounded-md border px-3 py-2 text-sm"
+            placeholder="Company name"
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+          />
+          <Button
+            size="lg"
+            onClick={() => open("create")}
+            disabled={busy || company.trim().length < 2}
+          >
+            {busy ? "Creating your company…" : `Create with ${biometric}`}
+          </Button>
+          <button className="text-sm underline" onClick={() => open("any")} disabled={busy}>
+            I already have a company account
+          </button>
+        </>
+      )}
       {error && <p className="text-destructive text-sm">{error}</p>}
     </main>
   );

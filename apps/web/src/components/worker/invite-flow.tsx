@@ -1,6 +1,6 @@
 "use client";
 
-// Accept an employer invite (SPEC.md F1): one Face ID prompt creates the account, a second one
+// Accept an employer invite (SPEC.md F1): one biometric prompt creates the account, a second one
 // activates the Income Passport. Only public keys and the passport commitment leave the device.
 
 import { commitment } from "@sigilo/core/hash";
@@ -14,7 +14,7 @@ import { useKeys, useSigilo } from "@/components/sigilo-provider";
 import { Button } from "@/components/ui/button";
 import { passportSecretFromPrf, workerKeysFromPrf } from "@/lib/identity";
 import { createPasskey, getPrf, passkeyErrorMessage } from "@/lib/passkeys";
-import { loadIdentity, saveIdentity } from "@/lib/public-identity";
+import { loadIdentity, saveIdentity, useBiometricName } from "@/lib/public-identity";
 
 import { api } from "../../../convex/_generated/api";
 
@@ -31,6 +31,7 @@ export function InviteFlow({ code }: { code: string }) {
   const accept = useMutation(api.employees.acceptInvite);
   const activate = useMutation(api.employees.setPassportCommitment);
 
+  const biometric = useBiometricName();
   const [name, setName] = useState("");
   const [step, setStep] = useState<Step>("welcome");
   const [error, setError] = useState<string | null>(null);
@@ -38,11 +39,12 @@ export function InviteFlow({ code }: { code: string }) {
   async function createAccount() {
     setError(null);
     try {
-      const { credentialId, prf } = await createPasskey("account", name.trim() || "Sigilo account");
-      const next = workerKeysFromPrf(prf);
+      const created = await createPasskey("account", name.trim() || "Sigilo account");
+      const next = workerKeysFromPrf(created.prf);
       saveIdentity({
         role: "worker",
-        credentialId,
+        credentialId: created.credentialId,
+        ...(created.transports ? { transports: created.transports } : {}),
         address: next.address,
         displayName: name.trim(),
       });
@@ -75,7 +77,7 @@ export function InviteFlow({ code }: { code: string }) {
     setError(null);
     setStep("activating");
     try {
-      const { prf } = await getPrf("passport", loadIdentity("worker")?.credentialId);
+      const { prf } = await getPrf("passport", loadIdentity("worker") ?? undefined);
       const secret = passportSecretFromPrf(prf);
       await activate({ commitment: fieldToHex(commitment(secret)) });
       setStep("done");
@@ -116,7 +118,7 @@ export function InviteFlow({ code }: { code: string }) {
             onChange={(e) => setName(e.target.value)}
           />
           <Button size="lg" onClick={createAccount}>
-            Continue with Face ID
+            Continue with {biometric}
           </Button>
         </>
       )}
@@ -129,7 +131,7 @@ export function InviteFlow({ code }: { code: string }) {
             employer.
           </p>
           <Button size="lg" onClick={activatePassport} disabled={step === "activating"}>
-            {step === "activating" ? "Preparing your passport…" : "Activate with Face ID"}
+            {step === "activating" ? "Preparing your passport…" : `Activate with ${biometric}`}
           </Button>
         </>
       )}
