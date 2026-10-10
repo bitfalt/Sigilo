@@ -50,16 +50,13 @@ Convex is installed in `apps/web` (schema in `convex/schema.ts`, dev deployment 
 
 ## Next steps (in order)
 
-Done since the last handoff: blind-server design (SPEC §5, F2/F3, S_EMPLOYER), core roster encryption + `preparePayrollRun` (52 tests), Convex sign-in (custom ES256 JWT after a Mera EVM signature; `pnpm smoke:auth`), and the Convex payroll backend (accounts, employers, employees, receipts, runs, registry + operator publish). **`pnpm smoke:payroll` passes end to end on testnet** (real payout, root published, worker decrypts pay, balances match).
+Done: blind-server payroll backend (`pnpm smoke:payroll` passes on testnet), demo faucet (+ hourly Agora refill cron), and functional unstyled client flows: Mera passkeys per namespace, Convex auth via Mera-signed tokens, worker unlock + invite onboarding (+ passport step-up) + wallet/payslips, employer create/unlock + test funds + encrypted roster + invite links + in-browser payroll with live status.
 
-1. **Client wiring (functional, unstyled until the UI session):**
-   - Convex provider with `ConvexProviderWithAuth` (token from `/auth/session`).
-   - Mera onboarding: worker (S_ACCOUNT, then S_PASSPORT step-up) and employer admin (S_EMPLOYER); keys only in memory.
-   - Worker: register keys, accept invite, activate passport, balance (Multicall3) + payslips.
-   - Employer: register, add employees (roster encryption + invite links), fund treasury (demo faucet action), run payroll in the browser (approve + disperse with Monad spacing/retries, then `runs.submit`).
-2. **Verification (Phase 4):** browser proving (Web Worker), verification requests, MPP-gated Verify API (pass `currency` = AUSD; patch mppx pull mode), lender console.
-3. **Phase 5:** Send home (relayed `SigiloPay.sendHome`), Advanced settings, advance (P1).
-4. Verify `acme` in prod Convex too (`npx convex run employers:verify` on the prod deployment) once Vercel deploys it.
+1. **User testing on a real device** (localhost first, then `sigilo.work`): employer creates Acme → add test funds → add María → open the invite on iPhone → Face ID → passport → run payroll → María sees balance + payslip. Spike S1 (PRF across devices).
+2. **Operator step per new employer:** `cd apps/web && npx convex run employers:verify '{"employer":"<id>"}'` (on prod: `--prod`).
+3. **Prod Convex env** (needs user OK): new session key pair, `OPERATOR_PRIVATE_KEY`, `FAUCET_PRIVATE_KEY`, `ALLOWED_ORIGINS`, `MONAD_RPC_URL` via `npx convex env set --prod`; required before the first Vercel deploy can push Convex.
+4. **Phase 4, verification:** browser proving (noir_js + bb.js in a Web Worker), verification requests + `/v/[requestId]`, Verify API (eth_call to IncomePassportVerifier, MPP-gated with AUSD; patch mppx pull mode), lender console.
+5. **Phase 5:** Send home (relayed `SigiloPay.sendHome`, Mom as a Sigilo contact), Advanced settings, advance (P1). UI style pass with the user on 2026-10-10.
 
 ## Notes and gotchas
 
