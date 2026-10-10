@@ -22,7 +22,7 @@ Paying a remote team in stablecoins is fast and cheap, but it is **public payrol
 4. **Send home (Agora).** María sends money to her mom: her pieces sign authorizations bound to that exact payment, a relayer submits them, and Agora converts AUSD to local money at a fixed price on the way. **Delivered in 0.7 s** in our end-to-end test. Mom joins with a link and her own passkey.
 5. **Salary advances repaid from payroll.** After a verified check, the lender offers an advance (up to 30% of the verified monthly income). María proves her income to the lender's vault, gets the money in a fresh account, and signs a deduction mandate; her employer's next payroll repays the vault automatically, like _crédito consignado_ or _deducción de planilla_.
 
-No seed phrases, no extensions, no passwords: **a passkey is the account** ([Mera](https://mera.category.xyz)), and it works on a new phone.
+No seed phrases, no extensions, no passwords: **a passkey is the account** ([Mera](https://mera.category.xyz)), and it works on a new phone. One passkey works with any number of employers. For people who manage their own accounts, **Settings → Advanced** (behind a second passkey check) moves everything to an external account or exports the keys.
 
 ## Privacy model ("if we get hacked")
 
@@ -47,12 +47,13 @@ Details: [SPEC.md §5](SPEC.md).
 
 ## Contracts (Monad testnet, verified on MonadVision)
 
-| Contract                 | Address                                                                                                                            |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `SigiloRegistry`         | [`0xba306ac85e31D43b92bc1915fF84354A08140A8B`](https://testnet.monadvision.com/address/0xba306ac85e31D43b92bc1915fF84354A08140A8B) |
-| `HonkVerifier`           | [`0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177`](https://testnet.monadvision.com/address/0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177) |
-| `IncomePassportVerifier` | [`0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290`](https://testnet.monadvision.com/address/0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290) |
-| `SigiloPay`              | [`0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701`](https://testnet.monadvision.com/address/0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701) |
+| Contract                        | Address                                                                                                                            |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `SigiloRegistry`                | [`0xba306ac85e31D43b92bc1915fF84354A08140A8B`](https://testnet.monadvision.com/address/0xba306ac85e31D43b92bc1915fF84354A08140A8B) |
+| `HonkVerifier`                  | [`0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177`](https://testnet.monadvision.com/address/0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177) |
+| `IncomePassportVerifier`        | [`0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290`](https://testnet.monadvision.com/address/0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290) |
+| `SigiloPay`                     | [`0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701`](https://testnet.monadvision.com/address/0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701) |
+| `AdvanceVault` (Fondo Quincena) | [`0xdB38A7F37f45934A42f4ddD740d8F69414de7734`](https://testnet.monadvision.com/address/0xdB38A7F37f45934A42f4ddD740d8F69414de7734) |
 
 Source of truth: [`packages/core/src/deployments.ts`](packages/core/src/deployments.ts).
 
@@ -63,7 +64,7 @@ apps/web             Next.js 16 PWA (landing, /app, /employer, /lender, /v/[id],
 packages/core        Shared TypeScript: key schedule, Poseidon2 + Merkle trees, one-time accounts, pieces,
                      spend intents, encrypted receipts, passport witness builder, attestations
 packages/circuits    Noir income_passport circuit, generated artifacts, Node prover
-packages/contracts   Foundry: SigiloRegistry, IncomePassportVerifier, HonkVerifier (generated), SigiloPay
+packages/contracts   Foundry: SigiloRegistry, IncomePassportVerifier, HonkVerifier (generated), SigiloPay, AdvanceVault
 ```
 
 ## Run it locally
@@ -86,14 +87,19 @@ cd packages/contracts && forge test    # unit, fuzz, and a real-proof verificati
 
 End-to-end on Monad testnet (needs `pnpm dev` and the testnet keys in `.env`):
 
-| Script                   | What it proves                                                                                                   |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `pnpm smoke:payroll`     | Encrypted roster → payout in shuffled pieces → registry root on-chain → worker decrypts payslip, balance matches |
-| `pnpm smoke:passport`    | 3 paid months → Income Passport proof → free on-chain check → lender pays $0.10 via MPP → signed attestation     |
-| `pnpm smoke:sendhome`    | Pieces sign → unauthenticated relay → AUSD→CTK on Agora → Mom's receipt and balance                              |
-| `pnpm e2e:passport`      | The passport flow through the real UI in headless Chromium with a virtual passkey (PRF)                          |
-| `pnpm e2e:sendhome`      | Send home through the real UI                                                                                    |
-| `pnpm e2e:passkey <url>` | Passkey create / sign-in against any deployment                                                                  |
+| Script                     | What it proves                                                                                                   |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `pnpm smoke:payroll`       | Encrypted roster → payout in shuffled pieces → registry root on-chain → worker decrypts payslip, balance matches |
+| `pnpm smoke:passport`      | 3 paid months → Income Passport proof → free on-chain check → lender pays $0.10 via MPP → signed attestation     |
+| `pnpm smoke:sendhome`      | Pieces sign → unauthenticated relay → AUSD→CTK on Agora → Mom's receipt and balance                              |
+| `pnpm smoke:advance`       | Verified check → offer → proof for the vault → advance on-chain → mandate → two payroll runs repay and close it  |
+| `pnpm smoke:collect`       | Advanced settings: move every piece to an external account                                                       |
+| `pnpm smoke:two-employers` | One account joins two employers; the Income Passport carries over                                                |
+| `pnpm e2e:passport`        | The passport flow through the real UI in headless Chromium with a virtual passkey (PRF)                          |
+| `pnpm e2e:sendhome`        | Send home through the real UI                                                                                    |
+| `pnpm e2e:advance`         | Salary advance through the real UI: lender offer, worker takes it on her phone, payroll repays                   |
+| `pnpm e2e:settings`        | Advanced settings through the real UI                                                                            |
+| `pnpm e2e:passkey <url>`   | Passkey create / sign-in against any deployment                                                                  |
 
 (Run them from `apps/web`.)
 
