@@ -1,0 +1,133 @@
+/* Employer console. Plain global classes with an "em-" prefix (CSS modules break under this
+   repo's Turbopack CSS rule, see landing.css). Tokens come from the app theme in globals.css. */
+
+.em-console {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Paper that sits on the security-paper background: payslips, the cheque, the register. */
+.em-slip {
+  background: var(--card);
+  border-radius: 6px;
+  box-shadow:
+    0 1px 0 rgba(15, 42, 32, 0.06),
+    0 18px 40px -26px rgba(15, 42, 32, 0.5);
+}
+
+/* The treasury cheque: a faint green security tint behind the amount. */
+.em-cheque {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  background:
+    repeating-linear-gradient(100deg, rgba(63, 127, 103, 0.045) 0 1px, transparent 1px 7px),
+    var(--card);
+}
+
+/* The payroll envelope: ultramarine security ink with a crosshatched tint, like the inside of
+   a bank envelope. */
+.em-envelope {
+  --envelope-ink: #f4f6ff;
+  position: relative;
+  isolation: isolate;
+  color: var(--envelope-ink);
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 7px),
+    repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.045) 0 1px, transparent 1px 7px),
+    var(--primary);
+}
+
+.em-envelope :focus-visible {
+  outline: 2px solid var(--envelope-ink);
+  outline-offset: 3px;
+}
+
+/* Tear-off edge: the envelope's bottom is perforated into the paper stub below it. */
+.em-tear {
+  --tear: radial-gradient(circle 4.5px at 7px 100%, transparent 97%, #000 100%) 0 0 / 14px 100%
+    repeat-x;
+  -webkit-mask: var(--tear);
+  mask: var(--tear);
+}
+
+/* Stamps: double-ruled ink, slightly rotated, as on the landing's Income Passport. */
+.em-stamp {
+  display: inline-flex;
+  flex-direction: column;
+  border: 2px solid currentColor;
+  outline: 1px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 8px;
+  transform: rotate(-3deg);
+}
+
+.em-stamp-in {
+  animation: em-stamp-in 520ms cubic-bezier(0.2, 0.9, 0.25, 1.15) both;
+}
+
+@keyframes em-stamp-in {
+  from {
+    opacity: 0;
+    transform: rotate(-10deg) scale(1.4);
+  }
+  55% {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+    transform: rotate(-3deg) scale(1);
+  }
+}
+
+/* Perforation between a register line and its stub: across on phones, down the page from sm. */
+.em-perf {
+  opacity: 0.4;
+  height: 8px;
+  background-image: radial-gradient(circle, currentColor 1.2px, transparent 1.5px);
+  background-size: 10px 8px;
+  background-repeat: repeat-x;
+  background-position: 0 50%;
+}
+
+@media (width >= 40rem) {
+  .em-perf {
+    height: auto;
+    background-size: 8px 10px;
+    background-repeat: repeat-y;
+    background-position: 50% 0;
+  }
+}
+
+/* The step the payroll run is on. */
+.em-pulse {
+  animation: em-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes em-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 246, 255, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(244, 246, 255, 0);
+  }
+}
+
+/* The seal that turns while the company opens. */
+.em-turn {
+  animation: em-turn 6s linear infinite;
+}
+
+@keyframes em-turn {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .em-stamp-in,
+  .em-pulse,
+  .em-turn {
+    animation: none;
+  }
+}
