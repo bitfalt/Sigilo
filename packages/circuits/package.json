@@ -8,7 +8,21 @@
   },
   "scripts": {
     "build": "./scripts/build.sh",
-    "test": "cd income_passport && nargo test",
+    "test": "pnpm test:noir && pnpm test:js",
+    "test:noir": "cd income_passport && nargo test",
+    "test:js": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "prove:fixture": "tsx scripts/prove-fixture.ts",
     "fmt": "cd income_passport && nargo fmt"
-  }
+  },
+  "devDependencies": {
+    "@aztec/bb.js": "5.2.1",
+    "@noir-lang/noir_js": "1.0.0-rc.2",
+    "@sigilo/core": "workspace:*",
+    "@types/node": "^22.20.5",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3"
+  },
+  "type": "module"
 }
