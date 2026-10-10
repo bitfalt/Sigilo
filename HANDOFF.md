@@ -50,14 +50,22 @@ Convex is installed in `apps/web` (schema in `convex/schema.ts`, dev deployment 
 
 ## Next steps (in order)
 
-1. **Convex auth (custom JWT):** challenge → Mera EVM signature → ES256 session JWT; JWKS from a Convex HTTP action; `convex/auth.config.ts` (`customJwt`). Check the exact config shape in the Convex docs first.
-2. **Payroll engine** (Convex actions + `"use node"` where needed):
-   - employer seed (Acme, random `employerId`, `setEmployerVerified`);
-   - run payroll: pieces (`splitIntoPieces` + `createOneTimeAccount` + `shuffled`) → treasury `approve` (exact) + `SigiloPay.disperse` → run tree + registry leaf → `publishRoot` (operator) → `encryptReceipt` per employee.
-3. **Worker app:** Mera onboarding on `sigilo.work` (S1), invite accept, balance (Multicall3) and payslips.
-4. **Relayer** (`/api/relay`), then verification (Phase 4), Send home + Advanced + advance (Phase 5), polish and ship.
+Done since the last handoff: blind-server design (SPEC §5, F2/F3, S_EMPLOYER), core roster encryption + `preparePayrollRun` (52 tests), Convex sign-in (custom ES256 JWT after a Mera EVM signature; `pnpm smoke:auth`), and the Convex payroll backend (accounts, employers, employees, receipts, runs, registry + operator publish). **`pnpm smoke:payroll` passes end to end on testnet** (real payout, root published, worker decrypts pay, balances match).
+
+1. **Client wiring (functional, unstyled until the UI session):**
+   - Convex provider with `ConvexProviderWithAuth` (token from `/auth/session`).
+   - Mera onboarding: worker (S_ACCOUNT, then S_PASSPORT step-up) and employer admin (S_EMPLOYER); keys only in memory.
+   - Worker: register keys, accept invite, activate passport, balance (Multicall3) + payslips.
+   - Employer: register, add employees (roster encryption + invite links), fund treasury (demo faucet action), run payroll in the browser (approve + disperse with Monad spacing/retries, then `runs.submit`).
+2. **Verification (Phase 4):** browser proving (Web Worker), verification requests, MPP-gated Verify API (pass `currency` = AUSD; patch mppx pull mode), lender console.
+3. **Phase 5:** Send home (relayed `SigiloPay.sendHome`), Advanced settings, advance (P1).
+4. Verify `acme` in prod Convex too (`npx convex run employers:verify` on the prod deployment) once Vercel deploys it.
 
 ## Notes and gotchas
+
+- Convex env (dev `brazen-poodle-85`): `SESSION_PRIVATE_JWK`, `SESSION_PUBLIC_JWK`, `ALLOWED_ORIGINS`, `OPERATOR_PRIVATE_KEY`, `MONAD_RPC_URL`. Prod needs the same (`npx convex env set --prod ...`).
+- Monad reserve balance: <10 MON accounts can only send value if idle for 3 blocks, and ~1 tx per 3 blocks; check receipt status (see `scripts/smoke-payroll.mts`).
+- `apps/web/tsconfig.tsbuildinfo` can replay stale errors; delete it if tsc disagrees with `--showConfig`.
 
 - If the circuit changes: `pnpm build`, then `pnpm prove:fixture` in `packages/circuits`, then `forge test`.
 - `packages/contracts/.env` is a gitignored symlink to the root `.env` (Foundry reads it). Fork tests need `pnpm test:fork`.
