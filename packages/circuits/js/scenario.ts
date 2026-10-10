@@ -3,18 +3,45 @@
 // another employer's runs so the prover's runs are not the only leaves.
 
 import {
+  advanceNonce,
   commitment,
   type PassportPayslip,
   payrollLeaf,
   periodIndex,
   registryLeaf,
   runTree,
+  vaultScope,
   verifierScope,
 } from "@sigilo/core";
 
 /** Stand-in verifier for fixtures; real scopes use the lender or vault address. */
 export const DEMO_VERIFIER = "0x00000000000000000000000000000000DeaDBeef";
 export const DEMO_CHAIN_ID = 10143;
+
+/**
+ * The advance proof fixture. AdvanceVaultProof.t.sol deploys the vault from `deployer` at nonce
+ * 0 on chain 10143, so its address (and therefore its scope) is known offline:
+ * `cast compute-address 0x00000000000000000000000000000000000A11CE --nonce 0`.
+ * María asks for the full $450 (30% of $1,500) to a fresh account of hers.
+ */
+export const ADVANCE_FIXTURE = {
+  deployer: "0x00000000000000000000000000000000000A11CE",
+  vault: "0x6b182f1488E8EfEb2Eb298155ed5Bd7FF8A14042",
+  chainId: DEMO_CHAIN_ID,
+  recipient: "0x000000000000000000000000000000000000cafe",
+  amount: 450_000_000n,
+  deadline: 1_800_000_000n,
+  salt: "0x5a17000000000000000000000000000000000000000000000000000000adface",
+} as const;
+
+/** The demo scenario proven for ADVANCE_FIXTURE's vault and request. */
+export function advanceScenario() {
+  const f = ADVANCE_FIXTURE;
+  return demoScenario({
+    scope: vaultScope(f.vault, f.chainId),
+    nonce: advanceNonce(f.recipient, f.amount, f.deadline, f.salt),
+  });
+}
 
 export function demoScenario(opts: { scope?: bigint; nonce?: bigint; threshold?: bigint } = {}) {
   const passportSecret = 0x0badc0ffee5eedn;
