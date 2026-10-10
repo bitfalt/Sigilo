@@ -88,7 +88,7 @@ export const inviteInfo = query({
 /** Bind the signed-in worker's account to the invited employee record. */
 export const acceptInvite = mutation({
   args: { inviteCodeHash: v.string() },
-  returns: v.object({ employerName: v.string() }),
+  returns: v.object({ employerName: v.string(), passportActive: v.boolean() }),
   handler: async (ctx, { inviteCodeHash }) => {
     const account = await requireAccount(ctx);
     const row = await ctx.db
@@ -96,16 +96,27 @@ export const acceptInvite = mutation({
       .withIndex("by_inviteCodeHash", (q) => q.eq("inviteCodeHash", inviteCodeHash))
       .unique();
     if (!row) throw new ConvexError("Invite not found");
+    const employer = await ctx.db.get("employers", row.employer);
+    const employerName = employer?.name ?? "";
     if (row.status !== "invited") {
       if (row.account === account._id) {
-        const employer = await ctx.db.get("employers", row.employer);
-        return { employerName: employer?.name ?? "" };
+        return { employerName, passportActive: !!row.passportCommitment };
       }
       throw new ConvexError("Invite already used");
     }
-    await ctx.db.patch("employees", row._id, { account: account._id, status: "active" });
-    const employer = await ctx.db.get("employers", row.employer);
-    return { employerName: employer?.name ?? "" };
+    // One person, one passkey, any number of employers: a passport activated with an earlier
+    // employer carries over (C is the same for every employer).
+    const others = await ctx.db
+      .query("employees")
+      .withIndex("by_account", (q) => q.eq("account", account._id))
+      .take(16);
+    const passportCommitment = others.find((r) => r.passportCommitment)?.passportCommitment;
+    await ctx.db.patch("employees", row._id, {
+      account: account._id,
+      status: "active",
+      ...(passportCommitment ? { passportCommitment } : {}),
+    });
+    return { employerName, passportActive: !!passportCommitment };
   },
 });
 

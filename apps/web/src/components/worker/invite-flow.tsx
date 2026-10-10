@@ -64,14 +64,20 @@ export function InviteFlow({ code }: { code: string }) {
           paymentProfile: keys.paymentProfile,
           receiptPublicKey: keys.receiptPublicKey,
         });
-        await accept({ inviteCodeHash });
-        setStep("passport");
+        const { passportActive } = await accept({ inviteCodeHash });
+        // Already has an Income Passport from another employer: nothing more to activate.
+        if (passportActive) {
+          setStep("done");
+          router.push("/app");
+        } else {
+          setStep("passport");
+        }
       } catch {
         setError("We couldn't join you to your employer. Try the link again.");
         setStep("welcome");
       }
     })();
-  }, [step, keys, isAuthenticated, register, accept, inviteCodeHash]);
+  }, [step, keys, isAuthenticated, register, accept, inviteCodeHash, router]);
 
   async function activatePassport() {
     setError(null);
