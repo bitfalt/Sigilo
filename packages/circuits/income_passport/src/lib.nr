@@ -29,6 +29,7 @@ pub fn pseudonym(secret: Field, scope: Field) -> Field {
 }
 
 /// Leaf of a payroll run tree: H(3, commitment, employer_id, period, gross, salt).
+/// `period` is a month index (year * 12 + month - 1); `gross` is in USD cents.
 pub fn payroll_leaf(
     commitment: Field,
     employer_id: Field,

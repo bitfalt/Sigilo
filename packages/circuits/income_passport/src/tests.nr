@@ -185,3 +185,37 @@ fn test_pseudonyms_differ_across_scopes() {
     let secret = 5;
     assert(pseudonym(secret, 1) != pseudonym(secret, 2));
 }
+
+// Cross-language vectors: packages/core/src/hash.test.ts pins the same values for the same
+// fixture. If either side changes a hash layout, domain tag or depth, one of them fails.
+#[test]
+fn test_cross_language_vectors() {
+    let f = fixture();
+    let c = commitment(f.passport_secret);
+    assert_eq(c, 0x04401786d573dd40ebf203160561072e98b1e90851e55a0fa804d0f93954dc2d);
+    assert_eq(f.pseudonym_out, 0x00d81107e1d8b8776be8b5fdf0b62ed989c74d3a477a80d575b3a0b75b820a79);
+    assert_eq(
+        payroll_leaf(c, f.employer_id, f.periods[0], f.gross[0], f.salts[0]),
+        0x013f6759cc8d948ed301e9b17b36fea3d0b399d18268c9d578c74196dc467eec,
+    );
+    assert_eq(f.run_roots[0], 0x1d42bcd77b8c96e8cc60654e8c8fd6edf8a5b9f64dcef9920c6c934ea98fe8a1);
+    assert_eq(f.run_roots[1], 0x0536d4038e2300bfc638652fcf2a9cf01ab4df5cc7b0f9e21ce1436a12f32f5b);
+    assert_eq(f.run_roots[2], 0x04504bbecdcbe180d7ce17246d72d37514a6c926797046179b164e59ea4d1f50);
+    assert_eq(
+        registry_leaf(f.employer_id, f.periods[0], f.run_roots[0]),
+        0x2337ac414a1d29d144d439e8ff9b7fa18f55bb9b1c4160c63b6aaaedaaec24f4,
+    );
+    assert_eq(f.registry_root, 0x1071e5acd50fbcf685407efcde701f5eaa71f94d261d699e6d53a791bb2da967);
+
+    // Roots of empty trees (empty leaf = 0).
+    let run_zero: [Field; RUN_DEPTH] = zero_hashes();
+    let reg_zero: [Field; REGISTRY_DEPTH] = zero_hashes();
+    assert_eq(
+        node(run_zero[RUN_DEPTH - 1], run_zero[RUN_DEPTH - 1]),
+        0x1210daf067cda09c37dc7fab28d05adf2989e161c3a5b55b92eb0beb0c820e72,
+    );
+    assert_eq(
+        node(reg_zero[REGISTRY_DEPTH - 1], reg_zero[REGISTRY_DEPTH - 1]),
+        0x1a8e5ed1f1128e6ca54bffc1b94fa4a6cd092049d280d6f6577e2f4bea81346b,
+    );
+}
