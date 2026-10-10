@@ -1,4 +1,4 @@
-# Handoff — 2026-10-10 (early morning)
+# Handoff — 2026-10-10 (morning)
 
 Start a new session with: _"Read SPEC.md, AGENTS.md and HANDOFF.md, then continue with the next steps."_
 
@@ -7,17 +7,20 @@ Deadline: **2026-10-14 03:59 UTC** (Oct 13, 21:59 CST). Target submit Oct 13 18:
 ## Live
 
 - **sigilo.work** on Vercel (Root `apps/web`, build `npx convex deploy --cmd 'pnpm run build'`). Prod Convex `bold-marlin-213`, dev `brazen-poodle-85`.
-- Pages: `/` (landing with a scroll-driven "split" of María's pay), `/app` (worker), `/app/invite/[code]`, `/app/send`, `/app/receive`, `/employer`, `/lender`, `/v/[requestId]`, `/api/v1/verify` (MPP-paid), `/api/lender/verify`.
-- Contracts on Monad testnet, verified: `packages/core/src/deployments.ts`.
+- Pages: `/` (landing), `/app` (worker), `/app/invite/[code]`, `/app/send`, `/app/receive`, `/app/settings`, `/employer`, `/lender`, `/v/[requestId]` (income check + advance offer), `/api/v1/verify` (MPP-paid), `/api/lender/verify`.
+- Contracts on Monad testnet, verified: `packages/core/src/deployments.ts`. `AdvanceVault` `0xdB38A7F37f45934A42f4ddD740d8F69414de7734` (lender = LENDER, 30% cap, 2% fee, funded with 1,000 AUSD). Each `requestAdvance` costs the operator ~0.6 MON (5.8M gas proof check).
 
 ## What works end to end (testnet)
 
-| Flow                                                                                                                              | Proof it works                                                        |
-| --------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| Payroll in fixed pieces to one-time accounts, blind server                                                                        | `pnpm smoke:payroll` 13/13                                            |
-| Passkey create/sign-in (prod)                                                                                                     | `pnpm e2e:passkey https://sigilo.work` 10/10                          |
-| Income Passport: request → browser proof (≈6.4 s headless) → free on-chain check → lender pays $0.10 via MPP → signed attestation | `pnpm smoke:passport` 16/16, `pnpm e2e:passport` 19/19 (real UI)      |
-| Send home: pieces sign ERC-3009 → unauthenticated relay → `SigiloPay.sendHome` (AUSD→CTK on Agora) → Mom's receipt                | `pnpm smoke:sendhome`, `pnpm e2e:sendhome` 14/14 (delivered in 0.7 s) |
+| Flow                                                                                                                                                                                               | Proof it works                                                        |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| Payroll in fixed pieces to one-time accounts, blind server                                                                                                                                         | `pnpm smoke:payroll` 13/13                                            |
+| Passkey create/sign-in (prod)                                                                                                                                                                      | `pnpm e2e:passkey https://sigilo.work` 10/10                          |
+| Income Passport: request → browser proof (≈6.4 s headless) → free on-chain check → lender pays $0.10 via MPP → signed attestation                                                                  | `pnpm smoke:passport` 16/16, `pnpm e2e:passport` 19/19 (real UI)      |
+| Send home: pieces sign ERC-3009 → unauthenticated relay → `SigiloPay.sendHome` (AUSD→CTK on Agora) → Mom's receipt                                                                                 | `pnpm smoke:sendhome`, `pnpm e2e:sendhome` 14/14 (delivered in 0.7 s) |
+| Salary advance: lender offer → worker proves for the AdvanceVault (nonce binds her fresh account) → relayed `requestAdvance` → EIP-712 deduction mandate → payroll deducts and repays until closed | `pnpm smoke:advance` 11/11, `pnpm e2e:advance` 20/20                  |
+| Advanced settings (step-up): move everything out (`SigiloPay.collect`), export keys JSON                                                                                                           | `pnpm smoke:collect`, `pnpm e2e:settings` 32/32                       |
+| One passkey, several employers (passport carries over)                                                                                                                                             | `pnpm smoke:two-employers`                                            |
 
 All scripts run against the Convex deployment in `.env.local` (dev) and need `pnpm dev` for the Next routes. Shared helpers: `apps/web/scripts/lib/{testnet,browser}.mts`.
 
