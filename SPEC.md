@@ -286,22 +286,32 @@ Cost estimate: N × (D_RUN + D_REG + 2) ≈ 78 Poseidon2 hashes. That should pro
 - Employer treasury: `@unlink-xyz/sdk/client` (custodial) + `@unlink-xyz/sdk/admin`.
 - Calls: `ensureRegistered`, `depositWithApproval`, `transfer` (multi-recipient), `withdraw`, `execute` (needs a seed-backed account), `getBalances`, `getTransactions`, `faucet.requestTestTokens` / `faucet.requestPrivateTokens`.
 - Wait on `tx.wait({ until: "processed" })` before spending fresh funds.
+- Groth16 proving runs **on the Engine**; the client only signs. Mobile proving time is not a concern for Unlink.
+- The SDK has no memo or viewing-key disclosure API, so we keep our own encrypted payslip channel. `createUnlinkAuthRoutes` uses Web `Request`/`Response` and drops into Next route handlers.
+- **2026-10-09: the `monad-testnet` Engine host does not resolve** (`monad-testnet-production-api.unlink.xyz` → a fly.dev name with no DNS record). Check `curl https://monad-testnet-production-api.unlink.xyz/health` before relying on it. `createUnlinkClient` accepts `engineUrl` if Unlink gives us a new one.
 - Docs: https://docs.unlink.xyz (`/llms.txt`)
 
 ### MPP (`@monad-crypto/mpp` + `mppx` + `viem`)
-- Server: `Mppx.create({ methods: [monad({ account, recipient, testnet: true })] })`, with `mppx.charge()` on `/api/v1/verify`.
-- Client (lender): `Mppx.create({ methods: [monad({ account })], polyfill: false })` then `mppx.fetch(...)`. Pull mode (ERC-3009) by default for local accounts, so the server pays gas.
+- Server: `Mppx.create({ methods: [monad({ account, recipient, currency: AUSD, decimals: 6, testnet: true })], secretKey })` from `mppx/nextjs`, then `export const POST = mppx.charge({ amount: "0.10", description })(handler)`. `amount` is human-readable; `currency`/`recipient` can be overridden per route.
+  - There is **no default testnet currency**: without `currency`, `testnet: true` throws. `secretKey` (≥ 32 bytes) is required. Create `Mppx` lazily so `next build` doesn't need the secret.
+- Client (lender): `Mppx.create({ methods: [monad({ account, mode: "pull" })], polyfill: false })` then `mppx.fetch(...)`. In pull mode (ERC-3009) the client needs only AUSD, and the server `account` pays MON gas.
+  - Pull mode only signs for a hardcoded `erc3009Tokens` list (mainnet USDC/USDT0). Add testnet AUSD with `pnpm patch @monad-crypto/mpp`: `"0xa9012a055bd4e0edff8ce09f960291c09d5322dc": { name: "Agora Dollar", version: "1" }`. Fallback: client `mode: "push"` (needs MON + AUSD).
+  - `@monad-crypto/mpp@0.0.3` was built against mppx 0.4.8; mppx 0.13.4 exports what it imports but the pair is untested. Replay protection is an in-memory store by default; pass a shared `store` on serverless.
 - Only the `charge` intent exists on Monad today.
 - Docs: https://docs.monad.xyz/reference/mpp/overview
 
 ### Agora (AUSD + Instant Settlement), Monad testnet
 - Instant Settlement Factory `0x8468587Af422ad440F58a57E955eCA6A970b5375`
 - CTK / AUSD Pair `0x1Aa8958Aa34cEC8096EF4381cb335effe977b0ae`
-- Whitelister `0x7c10F56d6f04a51376393a1C3670e966863F6BD5` (swaps require an approved swapper)
+- Whitelister `0x7c10F56d6f04a51376393a1C3670e966863F6BD5`. Swaps require an approved swapper; `setApprovedSwapper(address)` is self-service on testnet and can whitelist any address.
+- AUSD (testnet) `0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC`, 6 decimals (pair token1). Faucet `0xd236c18D274E54FAccC3dd9DDA4b27965a73ee6C`: `requestFunds(address)`.
+- CTK (testnet) `0x7BEb5D9DB0d85cBEa543C04f0dE8c23c2176cd9D`, 18 decimals (pair token0). No faucet on Monad; get it by swapping.
+- Swap (all calls on the **pair**): `hasRole("APPROVED_SWAPPER", me)` → `getAmountsOut(amountIn, [AUSD, CTK])` → `approve(pair, amountIn)` → `swapExactTokensForTokens(amountIn, amountOutMin, path, to, deadline)`. On 2026-10-09: price 1:1, zero fees, ~1M of each token in liquidity.
 - Examples: https://github.com/agora-finance/stable-swap-examples/tree/monad/src
 - Testnet tokens + whitelisting: https://docs.agora.finance/instant-settlement/guides/getting-testnet-tokens.md
 - AUSD on Monad mainnet: `0x00000000eFE302BEAA2b3e6e1b18d08D69a9012a`
-- AUSD supports ERC-3009, so it's compatible with MPP pull mode.
+- AUSD supports ERC-3009 (and `permit`), so it's compatible with MPP pull mode. Its EIP-712 domain name is `"Agora Dollar"`, version `"1"`, although `name()` returns `"AUSD"`.
+- All addresses above were verified on-chain with `cast call` on 2026-10-09.
 - Docs: https://docs.agora.finance
 
 ### Noir
@@ -384,6 +394,14 @@ The Track 02 bar is an **invisible blockchain**.
 | S6 | Noir: compile toy circuit → browser proof → Solidity verifier deployed on Monad testnet → `verify` passes | End-to-end in < 2 h | Off-chain verification only (Verify API) |
 | S7 | ~~Ask the organizers whether a PWA counts as a "mobile application" for the Agora bounty~~ | **Resolved: yes** (confirmed on the hackathon Discord, 2026-10-08) | — |
 
+**Results (2026-10-09):**
+- **S1:** open. Blocked on the production domain.
+- **S2:** **at risk.** The `monad-testnet` Engine host doesn't resolve (see §11 Unlink). Phone proving is a non-issue: Unlink proves on the Engine.
+- **S3:** open. The API is confirmed; whether the pool accepts AUSD can only be tested against a live Engine.
+- **S4:** **go.** Whitelisting is self-service, and the AUSD faucet and swap are verified with read-only calls (§11 Agora).
+- **S5:** **partial go.** Pass `currency` = testnet AUSD. Pull mode needs a one-line `pnpm patch` (§11 MPP); push mode is the fallback.
+- **S6:** **go** off-chain and in Foundry. A TS witness → noir_js → bb.js proof (226 ms native) verifies in `HonkVerifier` (~5.4M gas). What remains: deploy to testnet and measure browser proving on a phone.
+
 ### 15.2 Phases (cut lines are in order)
 | When | Phase | Output |
 |---|---|---|
@@ -433,9 +451,10 @@ The Track 02 bar is an **invisible blockchain**.
 | Scope creep (solo, 6 days) | Strict P0/P1/P2; cut P2 first, then the advance (keep it as a pitch slide) |
 | Domain change breaks passkeys | Lock the domain in Phase 0 |
 
-**Open questions:**
-- Does Unlink's SDK expose any memo or viewing-key feature that could replace our own payslip channel? (Its blog mentions "scoped audit views".)
-- `@monad-crypto/mpp`: how to set the amount and token per route in `mppx.charge()`?
+**Open questions** (answered 2026-10-09):
+- ~~Does Unlink's SDK expose any memo or viewing-key feature that could replace our own payslip channel?~~ No. "Scoped audit views" exists only in marketing. Keep our own payslip channel.
+- ~~`@monad-crypto/mpp`: how to set the amount and token per route in `mppx.charge()`?~~ `mppx.charge({ amount, currency?, recipient? })`, see §11 MPP.
+- **New:** is the Unlink `monad-testnet` Engine up, and does its pool accept testnet AUSD? (§11 Unlink, S2/S3)
 
 ---
 
