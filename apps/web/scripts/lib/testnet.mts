@@ -110,28 +110,31 @@ export async function verifiedEmployer(name: string, ausd: bigint) {
     stdio: ["ignore", "ignore", "ignore"],
   });
 
-  const faucet = privateKeyToAccount(faucetKey!);
-  await sleep(1_500);
-  const monTx = await createWalletClient({
-    account: faucet,
-    chain: monadTestnet,
-    transport,
-  }).sendTransaction({ to: treasury.address, value: parseEther("0.25"), gas: 21_000n });
-  const mon = await chain.waitForTransactionReceipt({ hash: monTx });
-  if (mon.status !== "success") throw new Error("MON funding failed");
-  await sleep(1_500);
-  await send(faucet, {
-    address: AGORA_TESTNET.ausd,
-    abi: erc20,
-    functionName: "transfer",
-    args: [treasury.address, ausd],
-  });
-  await send(treasury, {
-    address: AGORA_TESTNET.ausd,
-    abi: erc20,
-    functionName: "approve",
-    args: [SIGILO_TESTNET.sigiloPay, ausd],
-  });
+  // ausd = 0: an employer that never pays (no funding, no fees spent).
+  if (ausd > 0n) {
+    const faucet = privateKeyToAccount(faucetKey!);
+    await sleep(1_500);
+    const monTx = await createWalletClient({
+      account: faucet,
+      chain: monadTestnet,
+      transport,
+    }).sendTransaction({ to: treasury.address, value: parseEther("0.25"), gas: 21_000n });
+    const mon = await chain.waitForTransactionReceipt({ hash: monTx });
+    if (mon.status !== "success") throw new Error("MON funding failed");
+    await sleep(1_500);
+    await send(faucet, {
+      address: AGORA_TESTNET.ausd,
+      abi: erc20,
+      functionName: "transfer",
+      args: [treasury.address, ausd],
+    });
+    await send(treasury, {
+      address: AGORA_TESTNET.ausd,
+      abi: erc20,
+      functionName: "approve",
+      args: [SIGILO_TESTNET.sigiloPay, ausd],
+    });
+  }
 
   return {
     name,
