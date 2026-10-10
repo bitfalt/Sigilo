@@ -31,6 +31,8 @@ type Env = {
   readonly CONVEX_CLOUD_URL: string;
   readonly CONVEX_SITE_URL: string;
   readonly ALLOWED_ORIGINS: string | undefined;
+  readonly MONAD_RPC_URL: string | undefined;
+  readonly OPERATOR_PRIVATE_KEY: string;
   readonly SESSION_PRIVATE_JWK: string;
   readonly SESSION_PUBLIC_JWK: string;
 };

@@ -9,5 +9,8 @@ export default defineApp({
     SESSION_PUBLIC_JWK: v.string(),
     // Comma-separated browser origins allowed to call the HTTP actions (CORS).
     ALLOWED_ORIGINS: v.optional(v.string()),
+    // Sigilo operator: publishes registry roots and verifies employers. Secret.
+    OPERATOR_PRIVATE_KEY: v.string(),
+    MONAD_RPC_URL: v.optional(v.string()),
   },
 });

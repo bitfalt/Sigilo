@@ -1,5 +1,5 @@
 // End-to-end check of Convex sign-in against the configured deployment:
-//   pnpm smoke:auth (node --env-file=.env.local scripts/smoke-auth.mts)
+//   pnpm smoke:auth
 // A throwaway key stands in for a Mera session key. Nothing is persisted or printed.
 
 import { ConvexHttpClient } from "convex/browser";
