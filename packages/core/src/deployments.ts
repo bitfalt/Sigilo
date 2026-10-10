@@ -8,6 +8,8 @@ export const SIGILO_TESTNET = {
   honkVerifier: "0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177",
   passportVerifier: "0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290",
   sigiloPay: "0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701",
+  /** Demo lender's vault (Fondo Quincena), deployed 2026-10-10: 30% cap, 2% fee. */
+  advanceVault: "0xdB38A7F37f45934A42f4ddD740d8F69414de7734",
 } as const;
 
 /** Multicall3 (standard address, verified on Monad testnet). */
