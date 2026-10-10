@@ -22,7 +22,8 @@
     "./payroll": "./src/payroll.ts",
     "./roster": "./src/roster.ts",
     "./session": "./src/session.ts",
-    "./verify": "./src/verify.ts"
+    "./verify": "./src/verify.ts",
+    "./send": "./src/send.ts"
   },
   "scripts": {
     "test": "vitest run",

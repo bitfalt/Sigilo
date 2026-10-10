@@ -64,7 +64,10 @@ export interface TransferReceipt {
   memo?: string;
   token: "AUSD" | "CTK";
   pieces: ReceiptPiece[];
-  txHash: Hex;
+  /** The payment's transaction, when the sender knew it. */
+  txHash?: Hex;
+  /** SigiloPay intent hash (the `Paid` event's id), known before the payment is sent. */
+  intentHash?: Hex;
   issuedAt: number;
 }
 
