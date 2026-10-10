@@ -16,6 +16,8 @@
     "smoke:sendhome": "tsx --env-file=.env.local scripts/smoke-sendhome.mts",
     "smoke:two-employers": "tsx --env-file=.env.local scripts/smoke-two-employers.mts",
     "e2e:sendhome": "tsx --env-file=.env.local scripts/e2e-sendhome.mts",
+    "e2e:settings": "tsx --env-file=.env.local scripts/e2e-settings.mts",
+    "smoke:collect": "tsx --env-file=.env.local scripts/smoke-collect.mts",
     "e2e:passkey": "node scripts/e2e-passkey.mjs",
     "og:render": "node scripts/render-og.mjs"
   },

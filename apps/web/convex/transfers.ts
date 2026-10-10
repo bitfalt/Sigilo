@@ -1,10 +1,12 @@
+import { COLLECT_MAX_PIECES, collectDestination } from "@sigilo/core/collect";
+import { PayAction } from "@sigilo/core/intent";
 import { MIN_SEND_AUSD } from "@sigilo/core/send";
 import { ConvexError, v } from "convex/values";
 import type { Hex } from "viem";
 
 import { internal } from "./_generated/api";
 import { action, internalMutation, internalQuery, query } from "./_generated/server";
-import { relaySendHome } from "./lib/operator";
+import { relayCollect, relaySendHome } from "./lib/operator";
 
 // Send home (SPEC.md F8). The relay takes no session on purpose: the signed authorizations are
 // the only permission it needs, so the server never learns who is sending, only that some
@@ -105,6 +107,71 @@ export const sendHome = action({
       ciphertext: args.receipt,
     });
     return { txHash: result.hash, amountOut: result.amountOut.toString() };
+  },
+});
+
+/**
+ * Advanced settings (SPEC.md F10): move every piece to an external account the person pasted
+ * (SigiloPay.collect). Unauthenticated like sendHome: the signatures are the only permission,
+ * and the server never learns whose pieces they are. No receipt: the money leaves Sigilo.
+ */
+export const collect = action({
+  args: {
+    auths: v.array(v.object({ from: v.string(), value: v.string(), signature: v.string() })),
+    intent: v.object({
+      to: v.string(),
+      total: v.string(),
+      deadline: v.number(),
+      salt: v.string(),
+    }),
+  },
+  returns: v.object({ txHash: v.string() }),
+  handler: async (_ctx, { auths, intent }): Promise<{ txHash: string }> => {
+    const now = Math.floor(Date.now() / 1000);
+    if (
+      auths.length === 0 ||
+      auths.length > COLLECT_MAX_PIECES ||
+      !auths.every((a) => ADDRESS.test(a.from) && /^\d+$/.test(a.value) && HEX.test(a.signature)) ||
+      !/^\d+$/.test(intent.total) ||
+      !/^0x[0-9a-fA-F]{64}$/.test(intent.salt)
+    ) {
+      throw new ConvexError("Invalid payment");
+    }
+    let to: Hex;
+    try {
+      to = collectDestination(intent.to);
+    } catch {
+      throw new ConvexError("That address can't receive this money");
+    }
+    const total = BigInt(intent.total);
+    if (total === 0n || auths.reduce((s, a) => s + BigInt(a.value), 0n) !== total) {
+      throw new ConvexError("Invalid payment");
+    }
+    if (intent.deadline <= now || intent.deadline > now + MAX_DEADLINE_SECONDS) {
+      throw new ConvexError("This payment expired. Try again.");
+    }
+
+    try {
+      const { hash } = await relayCollect({
+        auths: auths.map((a) => ({
+          from: a.from as Hex,
+          value: BigInt(a.value),
+          signature: a.signature as Hex,
+        })),
+        intent: {
+          action: PayAction.Collect,
+          to,
+          total,
+          minOut: 0n,
+          deadline: BigInt(intent.deadline),
+          salt: intent.salt as Hex,
+        },
+      });
+      return { txHash: hash };
+    } catch (e) {
+      console.error("collect failed", String(e).slice(0, 500));
+      throw new ConvexError("The move didn't go through. Nothing was moved.");
+    }
   },
 });
 

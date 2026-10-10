@@ -30,6 +30,7 @@ const sigiloPayAbi = parseAbi([
   "struct Intent { uint8 action; address to; uint256 total; uint256 minOut; uint256 deadline; bytes32 salt; }",
   "struct Authorization { address from; uint256 value; bytes signature; }",
   "function sendHome(Authorization[] auths, Intent intent) returns (uint256 amountOut)",
+  "function collect(Authorization[] auths, Intent intent) returns (bytes32 hash)",
 ]);
 
 function clients() {
@@ -130,4 +131,26 @@ export async function relaySendHome({ auths, intent }: SendHomeArgs) {
     }
   }
   return { hash, amountOut };
+}
+
+/**
+ * Relay SigiloPay.collect (Advanced settings: move everything to another account). Same checks
+ * as relaySendHome; the signed intent fixes the recipient and the total, so the operator can't
+ * redirect the money.
+ */
+export async function relayCollect({ auths, intent }: SendHomeArgs): Promise<{ hash: Hex }> {
+  const { account, publicClient, walletClient } = clients();
+  const request = {
+    address: SIGILO_TESTNET.sigiloPay,
+    abi: sigiloPayAbi,
+    functionName: "collect",
+    args: [auths, intent],
+    account,
+  } as const;
+  await publicClient.simulateContract(request);
+  const gas = await publicClient.estimateContractGas(request);
+  const hash = await walletClient.writeContract({ ...request, gas: (gas * 115n) / 100n });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") throw new Error(`transaction reverted: ${hash}`);
+  return { hash };
 }

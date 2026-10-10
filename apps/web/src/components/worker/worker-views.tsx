@@ -2,7 +2,7 @@
 // Convex and wallet logic stays in worker-home.tsx and invite-flow.tsx, and
 // /dev-preview/worker renders these with sample data.
 
-import { CircleAlert, KeyRound, Lock } from "lucide-react";
+import { CircleAlert, KeyRound, Lock, Settings } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent, ReactNode } from "react";
 
@@ -199,14 +199,23 @@ export function DashboardView({
     <AppShell
       wide
       action={
-        <Button
-          variant="ghost"
-          onClick={onLock}
-          className="-mr-3 h-11 gap-2 rounded-full px-4 text-[0.9375rem] font-medium"
-        >
-          <Lock aria-hidden="true" />
-          Lock
-        </Button>
+        <div className="-mr-3 flex items-center">
+          <Link
+            href="/app/settings"
+            className="hover:bg-muted focus-visible:ring-ring/50 inline-flex h-11 items-center gap-2 rounded-full px-4 text-[0.9375rem] font-medium outline-none focus-visible:ring-3"
+          >
+            <Settings aria-hidden="true" className="size-4" />
+            Settings
+          </Link>
+          <Button
+            variant="ghost"
+            onClick={onLock}
+            className="h-11 gap-2 rounded-full px-4 text-[0.9375rem] font-medium"
+          >
+            <Lock aria-hidden="true" />
+            Lock
+          </Button>
+        </div>
       }
     >
       <h1 className="sr-only">Your account</h1>
