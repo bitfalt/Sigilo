@@ -51,7 +51,7 @@ Each smoke/e2e run moves 0.25 MON from the faucet to a test employer. Top up the
 
 1. Prod check after the env vars: run `pnpm e2e:passport https://sigilo.work` (spends testnet money) or click through `/lender` + `/v/...` on a phone.
 2. Demo data on prod: a verified employer, María with 3 paid months, Mom's account.
-3. Merge the landing redesign (subagent branch `worktree-agent-aaa89585347a0d535`) after review.
+3. Landing redesign is merged (hero load sequence, parallax, scroll reveals, Income Passport / advance / send-home stories, privacy band, FAQ). Check scroll timelines on a real iPhone.
 4. Demo videos (Mera UX, Mera namespaces, Agora send home, MPP), bounty write-ups, 5+ testers. README is done.
 5. MON budget: top up OPERATOR (advances) and TREASURY (faucet) from DEPLOYER as they run low.
 
