@@ -14,5 +14,8 @@ export default defineApp({
     MONAD_RPC_URL: v.optional(v.string()),
     // Demo faucet (testnet only): funds new employer treasuries with AUSD and MON. Secret.
     FAUCET_PRIVATE_KEY: v.string(),
+    // "true" on a demo deployment: verify every new employer automatically (KYB stand-in), so
+    // testers get Income Passports without waiting for the operator.
+    AUTO_VERIFY_EMPLOYERS: v.optional(v.string()),
   },
 });

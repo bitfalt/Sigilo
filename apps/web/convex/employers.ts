@@ -3,6 +3,7 @@ import { ConvexError, v } from "convex/values";
 
 import { internal } from "./_generated/api";
 import {
+  env,
   internalAction,
   internalMutation,
   internalQuery,
@@ -47,12 +48,16 @@ export const register = mutation({
       .unique();
     if (clash) throw new ConvexError("Employer id already in use");
 
-    return ctx.db.insert("employers", {
+    const employer = await ctx.db.insert("employers", {
       name: trimmed,
       employerId: id,
       verified: false,
       treasuryAddress: address,
     });
+    if (env.AUTO_VERIFY_EMPLOYERS === "true") {
+      await ctx.scheduler.runAfter(0, internal.employers.verify, { employer });
+    }
+    return employer;
   },
 });
 
