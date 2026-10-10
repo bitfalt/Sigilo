@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
+    "@category-labs/mera": "0.2.0",
     "@sigilo/core": "workspace:*",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
