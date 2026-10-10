@@ -140,6 +140,8 @@ export async function verifiedEmployer(name: string, ausd: bigint) {
     name,
     employerId,
     client,
+    treasury,
+    rosterKey: keys.rosterKey,
     /** Add a person to the encrypted roster; returns the invite code for their link. */
     async invite(person: string, monthlySalaryCents: number) {
       const invite = newInviteCode();
