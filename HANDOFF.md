@@ -26,15 +26,29 @@ Every hosted Unlink environment (mainnets included) points to a fly.dev host tha
 - Agent tooling: Unlink skill and docs MCP removed; mera skill updated.
 - Root `.env` exists (gitignored, `chmod 600`); `apps/web/.env.local` is a symlink to it. `SESSION_SECRET` is set. The `*_PRIVATE_KEY` values are empty (auto-mode blocked generating them). The old `UNLINK_*` lines are unused.
 
+## Deployed (Monad testnet, verified on MonadVision)
+
+Addresses are in `packages/core/src/deployments.ts`: `SigiloRegistry` (operator = OPERATOR), `HonkVerifier`, `IncomePassportVerifier`, `SigiloPay` (Agora approved swapper). The deployed `HonkVerifier` accepts a real TS-generated proof.
+
+| Account  | Address                                      | Funds (2026-10-09) |
+| -------- | -------------------------------------------- | ------------------ |
+| DEPLOYER | `0xc4C10B03547cf64aFEbCdC4aA4eCF3b8752Aa22A` | ~5.9 MON           |
+| OPERATOR | `0x47855D8f060c1d949fb4b9DeccD8B7c333b95AfC` | ~6 MON             |
+| TREASURY | `0x96A7149DFEca74D150612d1F1cB42A0903CC7f8F` | ~1 MON, 8,000 AUSD |
+| LENDER   | `0xf76E8721D6d893D8078c18F93C4689C13A0bFC2d` | ~1 MON, 2,000 AUSD |
+
+The Agora AUSD faucet has a global cooldown (`MaxFrequencyExceeded()`). Keys are in the root `.env` only. Never print them; load with `set -a; . ./.env; set +a` inside a subshell.
+
+Convex is installed in `apps/web` (empty schema, `pnpm dev:convex`, AI guidelines + agent skills; the Convex plugin is installed for Claude Code and Codex).
+
 ## Pending user actions
 
-1. **Fill and fund keys:** run the fill-in command (in chat) for `OPERATOR`, `TREASURY`, `LENDER`, `DEPLOYER` (+ `MPP_SECRET_KEY`). Fund from faucet.monad.xyz: `DEPLOYER` ≥ 2.5 MON (deploy), `OPERATOR` as much as possible (relays ~0.1 MON per payment, ~0.5–1 MON per on-chain passport `attest` at ~100 gwei).
+1. **Convex login:** in a separate terminal, `cd apps/web && pnpm dev:convex` (creates the project and writes `CONVEX_DEPLOYMENT` / `NEXT_PUBLIC_CONVEX_URL` into the root `.env` through the symlink). Keep it running while developing.
 2. **Production domain** (a subdomain) → `NEXT_PUBLIC_RP_ID`; deploy to Vercel on it. Blocks S1.
-3. **Convex:** run `npx convex dev` in `apps/web` (interactive login).
 
 ## Next steps (in order)
 
-1. **Deploy** once `DEPLOYER` is funded: `cd packages/contracts && pnpm deploy:testnet`. Check verification on testnet.monadvision.com, fill `NEXT_PUBLIC_*_ADDRESS` in `.env`, and mark the demo employer verified (`setEmployerVerified`, operator key).
+1. **Mark the demo employer verified** (`setEmployerVerified`, OPERATOR key) once its id exists in Convex.
 2. **Phase 3, accounts + payroll** (SPEC §15.2):
    - Mera onboarding (S1 on the real domain).
    - Convex schema.
