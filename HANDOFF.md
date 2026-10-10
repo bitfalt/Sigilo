@@ -1,4 +1,4 @@
-# Handoff — 2026-10-09 (late night)
+# Handoff — 2026-10-09 (night)
 
 Start a new session with: _"Read SPEC.md, AGENTS.md and HANDOFF.md, then continue with the next steps."_
 
@@ -39,24 +39,23 @@ Addresses are in `packages/core/src/deployments.ts`: `SigiloRegistry` (operator 
 
 The Agora AUSD faucet has a global cooldown (`MaxFrequencyExceeded()`). Keys are in the root `.env` only. Never print them; load with `set -a; . ./.env; set +a` inside a subshell.
 
-Convex is installed in `apps/web` (empty schema, `pnpm dev:convex`, AI guidelines + agent skills; the Convex plugin is installed for Claude Code and Codex).
+Convex is installed in `apps/web` (schema in `convex/schema.ts`, dev deployment `brazen-poodle-85`, `pnpm dev:convex`, AI guidelines + agent skills; the Convex plugin is installed for Claude Code and Codex).
 
 ## Pending user actions
 
-1. **Convex login:** in a separate terminal, `cd apps/web && pnpm dev:convex` (creates the project and writes `CONVEX_DEPLOYMENT` / `NEXT_PUBLIC_CONVEX_URL` into the root `.env` through the symlink). Keep it running while developing.
-2. **Production domain** (a subdomain) → `NEXT_PUBLIC_RP_ID`; deploy to Vercel on it. Blocks S1.
+1. **Vercel:** import `bitfalt/Sigilo`, Root Directory `apps/web`, env `ENABLE_EXPERIMENTAL_COREPACK=1`, `NEXT_PUBLIC_RP_ID=sigilo.work`, `NEXT_PUBLIC_RP_NAME=Sigilo`, `NEXT_PUBLIC_MONAD_RPC_URL`, `NEXT_PUBLIC_EXPLORER_URL`. Add domains `sigilo.work` + `www` (redirect).
+2. **Porkbun DNS for `sigilo.work`** (bought 2026-10-09): delete the default parking records, add the records Vercel shows, and set up email forwarding `hello@sigilo.work` → Proton (or a Proton custom domain on a paid plan).
+3. **X account** with `hello@sigilo.work`.
+4. **UI style direction:** planned for 2026-10-10 with the user.
 
 ## Next steps (in order)
 
-1. **Mark the demo employer verified** (`setEmployerVerified`, OPERATOR key) once its id exists in Convex.
-2. **Phase 3, accounts + payroll** (SPEC §15.2):
-   - Mera onboarding (S1 on the real domain).
-   - Convex schema.
-   - Receipt encryption (X25519 + AEAD) in core.
-   - Employer dashboard and payroll run: pieces → `disperse` (approve the exact amount) → run tree → registry leaf → `publishRoot` → receipts.
-   - Worker balance (Multicall3 `0xcA11bde05977b3631167028862bE2a173976CA11`, verified on testnet) and payslips.
-3. **Relayer** (`POST /api/relay`): tight gas limits (Monad charges the limit), operator nonce tracking.
-4. Then verification (Phase 4), Send home + Advanced + advance (Phase 5), polish and ship.
+1. **Convex auth (custom JWT):** challenge → Mera EVM signature → ES256 session JWT; JWKS from a Convex HTTP action; `convex/auth.config.ts` (`customJwt`). Check the exact config shape in the Convex docs first.
+2. **Payroll engine** (Convex actions + `"use node"` where needed):
+   - employer seed (Acme, random `employerId`, `setEmployerVerified`);
+   - run payroll: pieces (`splitIntoPieces` + `createOneTimeAccount` + `shuffled`) → treasury `approve` (exact) + `SigiloPay.disperse` → run tree + registry leaf → `publishRoot` (operator) → `encryptReceipt` per employee.
+3. **Worker app:** Mera onboarding on `sigilo.work` (S1), invite accept, balance (Multicall3) and payslips.
+4. **Relayer** (`/api/relay`), then verification (Phase 4), Send home + Advanced + advance (Phase 5), polish and ship.
 
 ## Notes and gotchas
 
