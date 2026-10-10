@@ -1,6 +1,6 @@
 ---
 name: mera
-description: How Sigilo uses Mera (@category-labs/mera) for passkey accounts — creating and signing in with passkeys, PRF salts as key namespaces, deriving the EVM key / Unlink seed / payslip key / passport secret, Mera signing sessions with viem on Monad, step-up prompts, the "stateless test", and authenticator caveats. Use whenever touching onboarding, sign-in, key derivation, signing, or anything under packages/core/src/keys or the worker auth flow.
+description: How Sigilo uses Mera (@category-labs/mera) for passkey accounts — creating and signing in with passkeys, PRF salts as key namespaces, deriving the EVM key / stealth spend+view keys / payslip key / passport secret, Mera signing sessions with viem on Monad, step-up prompts, the "stateless test", and authenticator caveats. Use whenever touching onboarding, sign-in, key derivation, signing, or anything under packages/core/src/keys or the worker auth flow.
 ---
 
 # Mera in Sigilo
