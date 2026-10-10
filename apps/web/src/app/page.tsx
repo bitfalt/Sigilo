@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Advance } from "@/components/landing/advance";
+import { Audiences } from "@/components/landing/audiences";
+import { Closing, Faq, Imprint } from "@/components/landing/faq";
 import { Hero } from "@/components/landing/hero";
 import { LandingMotion } from "@/components/landing/landing-motion";
 import { Passport } from "@/components/landing/passport";
 import { SealMark } from "@/components/landing/seal-mark";
+import { Sealed } from "@/components/landing/sealed";
 import { SendHome } from "@/components/landing/send-home";
 import { Problem, Split } from "@/components/landing/split";
 import { styles } from "@/components/landing/styles";
@@ -18,8 +21,8 @@ export const metadata: Metadata = {
 };
 
 // The landing tells one month of María's pay: paid privately (the split), proven to a lender
-// (Income Passport), borrowed against (advance), sent home. Motion: landing.css +
-// landing-motion.tsx.
+// (Income Passport), borrowed against (advance), sent home; then who it's for, why a leak reveals
+// nothing, questions and the close. Motion: landing.css + landing-motion.tsx.
 
 export default function Home() {
   return (
@@ -31,6 +34,15 @@ export default function Home() {
             <span className={`${styles.heading} text-xl`}>Sigilo</span>
           </Link>
           <nav aria-label="Main" className="flex items-center gap-6 text-sm font-medium">
+            <a href="#employers" className={`${styles.navLink} hidden md:inline`}>
+              Employers
+            </a>
+            <a href="#workers" className={`${styles.navLink} hidden md:inline`}>
+              Workers
+            </a>
+            <a href="#lenders" className={`${styles.navLink} hidden md:inline`}>
+              Lenders
+            </a>
             <Link href="/app" className={`${styles.secondary} ${styles.small}`}>
               Open your account
             </Link>
@@ -47,6 +59,13 @@ export default function Home() {
         <Passport />
         <Advance />
         <SendHome />
+        <Perforation />
+        <Audiences />
+        <Sealed />
+        <Imprint />
+        <Perforation />
+        <Faq />
+        <Closing />
       </main>
 
       <footer>
