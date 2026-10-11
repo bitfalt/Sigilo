@@ -10,6 +10,11 @@ export const SIGILO_TESTNET = {
   sigiloPay: "0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701",
   /** Demo lender's vault (Fondo Quincena), deployed 2026-10-10: 30% cap, 2% fee. */
   advanceVault: "0xdB38A7F37f45934A42f4ddD740d8F69414de7734",
+  /**
+   * Consumer of the Chainlink CRE "payday" workflow (packages/cre), deployed 2026-10-11. Trusts
+   * the Monad testnet MockKeystoneForwarder (simulation broadcasts).
+   */
+  sigiloOracle: "0xA2750a6aa2cCaD241e2c8d21d06C8C19e789890D",
 } as const;
 
 /** Multicall3 (standard address, verified on Monad testnet). */
