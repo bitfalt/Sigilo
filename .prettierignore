@@ -13,3 +13,4 @@ packages/contracts/src/generated
 apps/web/convex/_generated
 apps/web/.agents
 apps/web/.claude
+packages/cre/**/.cre_build_tmp.*

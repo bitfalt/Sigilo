@@ -1,0 +1,21 @@
+{
+  "name": "@sigilo/cre-payday",
+  "version": "0.0.0",
+  "description": "Sigilo's Chainlink CRE payday workflow: audits payroll registry roots and payroll-deducted advances on Monad.",
+  "main": "dist/main.js",
+  "private": true,
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@chainlink/cre-sdk": "1.23.0",
+    "@zkpassport/poseidon2": "0.6.2",
+    "viem": "2.57.4",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
+  }
+}
