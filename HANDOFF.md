@@ -45,6 +45,16 @@ All scripts run against the Convex deployment in `.env.local` (dev) and need `pn
 
 Each smoke/e2e run moves 0.25 MON from the faucet to a test employer. Top up the faucet from DEPLOYER when it runs low (it also funds "Add test funds" in prod).
 
+## Envio indexer (packages/indexer)
+
+HyperIndex over HyperSync for all Sigilo contracts plus the AUSD transfers that matter; feeds `/network`, the lender console's portfolio and `/record/[tx]` (details: `packages/indexer/README.md`). Envio Cloud is connected to this repo (Indexer Directory `./packages/indexer`, config `config.yaml`, release branch `envio`, free Development plan).
+
+1. Deploy: `git push origin main:envio` (each push re-indexes from block 69,704,790 in a few minutes; the old deployment serves until the new one is synced).
+2. Copy the deployment's GraphQL URL from the Envio dashboard into Vercel Production: `printf %s "$URL" | vercel env add NEXT_PUBLIC_ENVIO_GRAPHQL_URL production`, then redeploy prod (it's inlined at build time). Add it to `.env` for local dev too.
+3. Until then every consumer degrades: `/network` says the live numbers are on their way, the lender portfolio and the record page's "Since payday" are hidden.
+4. Dev plan fair use: soft limit 100k events (we're at ~150 filtered events), deployments older than 30 days are deleted, 3 deployments per indexer (delete old ones before pushing a fourth).
+5. Verify against the chain any time: `cd packages/indexer && pnpm snapshot:testnet && pnpm test:testnet`.
+
 ## Pending user actions
 
 1. One pass of the landing's scroll animation on the demo iPhone (Safari 18+ scroll timelines are untested here).
