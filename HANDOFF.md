@@ -45,6 +45,13 @@ All scripts run against the Convex deployment in `.env.local` (dev) and need `pn
 
 Each smoke/e2e run moves 0.25 MON from the faucet to a test employer. Top up the faucet from DEPLOYER when it runs low (it also funds "Add test funds" in prod).
 
+## Chainlink CRE payday workflow (packages/cre)
+
+See `packages/cre/README.md`. CLI at `~/.cre/bin/cre` (v1.38.0), logged in (org "My Org", deploy access not enabled). Simulate from `packages/cre` (after `bun install && bunx cre-setup` in `payday/`):
+`~/.cre/bin/cre workflow simulate payday --target local-simulation --non-interactive --trigger-index 0` (cron) and `--trigger-index 1 --evm-tx-hash <RootPublished tx> --evm-event-index 0` (log). Broadcast (real report on Monad testnet) needs `SigiloOracle` deployed (`cd packages/contracts && pnpm deploy:oracle`), its address in `packages/core/src/deployments.ts` and `payday/config.staging.json`, and a funded `CRE_ETH_PRIVATE_KEY` in `packages/cre/.env`; then `--target staging-settings --broadcast`.
+
+**Shared registry caveat:** dev and prod Convex publish roots to the same `SigiloRegistry` (history of 64 roots). Every dev payroll run pushes prod roots toward eviction, which would break prod Income Passports until the next prod payroll; keep dev payroll tests few once prod demo data exists. A CRE run pointed at one backend reports the other backend's roots as `RootMismatch`.
+
 ## Envio indexer (packages/indexer)
 
 HyperIndex over HyperSync for all Sigilo contracts plus the AUSD transfers that matter; feeds `/network`, the lender console's portfolio and `/record/[tx]` (details: `packages/indexer/README.md`). Envio Cloud is connected to this repo (Indexer Directory `./packages/indexer`, config `config.yaml`, release branch `envio`, free Development plan).

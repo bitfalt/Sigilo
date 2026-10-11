@@ -359,16 +359,18 @@ Every hosted Unlink environment, mainnets included, points to a fly.dev host tha
 - Circuit in `packages/circuits/income_passport`. Use `nargo` to compile/test and `bb` for the verification key and Solidity verifier.
 - Browser proving: `@noir-lang/noir_js` + `@aztec/bb.js` (UltraHonk). Pin versions that match `nargo`/`bb` exactly.
 
-### Chainlink CRE (P2, bounty: $3k)
-- Workflow "Payroll scheduler":
-  1. Cron trigger.
-  2. HTTP fetch of `/api/cre/payroll-due` and an FX rate API (local-currency salaries).
-  3. Call the run endpoint and/or write a report on-chain.
-- A **CLI simulation** is enough for the bounty. CRE supports Monad testnet for simulation (forwarder addresses in the CRE docs).
+### Chainlink CRE (bounty: $3k) — built (`packages/cre`)
+Workflow **"payday"**, the orchestration layer between Sigilo's backend, Monad and the lender (details: `packages/cre/README.md`):
+1. Triggers: a monthly payday cron (`0 0 12 1 * *`) and the `SigiloRegistry.RootPublished` log.
+2. External system: `GET {backend}/cre/payday` (public registry leaves + advances due as `{vault, advanceId, expectedRepaid, period}`; never employers, names or salaries), fetched with consensus.
+3. Each node rebuilds the depth-16 Poseidon2 registry tree from the public leaves and checks the on-chain root; reads `AdvanceVault.advances(id)` and marks installments late when `repaid < expectedRepaid`.
+4. One DON-signed report to `SigiloOracle` on Monad testnet (`RootChecked` / `RootMismatch` / `InstallmentLate` / `InstallmentCaughtUp`).
+- Simulated with the CRE CLI (`cre workflow simulate payday --target local-simulation ...`); `--broadcast` delivers through the Monad testnet MockKeystoneForwarder `0xB9F79d863261869B234c481D1f9A7af84AeAd192`. Deployment to the CRE network needs Early Access.
 
-### Envio (P2, bounty: $1k)
-- HyperIndex over `SigiloRegistry`, `IncomePassportVerifier`, `SigiloPay`, and `AdvanceVault`.
-- Derived entities: lender portfolio (outstanding, repaid, default rate), network stats (verified employers, runs, verifications).
+### Envio (bounty: $1k) — built (`packages/indexer`)
+- HyperIndex over HyperSync on Monad testnet: `SigiloRegistry`, `IncomePassportVerifier`, `SigiloPay` (with `disperse` calldata decoding), `AdvanceVault`, and the AUSD transfers into SigiloPay and the vault.
+- Aggregates: network stats, daily activity, per-company totals, sizes paid, lender portfolio per vault, borrowers. **Adversary analytics:** per-run anonymity sets, linkage clusters created by spending, unlinked share, single-piece runs, advances tied to their repaying company.
+- Feeds `/network`, the lender console's portfolio panel and `/record/[tx]`. Deployed on Envio Cloud from the `envio` branch.
 
 ---
 
