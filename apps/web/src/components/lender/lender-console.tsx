@@ -24,6 +24,7 @@ import { formatAmount } from "@/lib/wallet";
 
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
+import { PortfolioPanel } from "./portfolio-panel";
 
 // ------------------------------------------------------------------ checks opened in this browser
 
@@ -84,6 +85,7 @@ export function LenderConsole() {
             Sigilo Income Passports.
           </p>
         </header>
+        <PortfolioPanel />
         <Perforation />
 
         <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">

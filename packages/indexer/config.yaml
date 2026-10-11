@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+# Sigilo on Monad testnet: payroll, spending, salary advances, and what the public record
+# reveals about them. Data source: HyperSync (https://monad-testnet.hypersync.xyz).
+# Addresses and deployment blocks: packages/core/src/deployments.ts and constants.ts.
+name: sigilo
+description: Sigilo private payroll on Monad testnet, and what a stranger can learn from it
+# Entity ids embed addresses; lowercase keeps them stable for the app's lookups.
+address_format: lowercase
+
+contracts:
+  - name: SigiloRegistry
+    events:
+      - event: "RootPublished(bytes32 indexed root, uint256 indexed index)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "EmployerVerificationSet(bytes32 indexed employerId, bool verified)"
+
+  - name: IncomePassportVerifier
+    events:
+      - event: "PassportVerified(uint256 indexed scope, uint256 indexed pseudonym, uint64 threshold, uint256 firstPeriod, uint256 nonce, bytes32 registryRoot)"
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: SigiloPay
+    events:
+      # One payroll run. The pieces only exist in the `disperse(to[], amounts[])` calldata, so the
+      # handler decodes the transaction input.
+      - event: "Dispersed(address indexed payer, uint256 pieces, uint256 total)"
+        field_selection:
+          transaction_fields:
+            - hash
+            - to
+            - input
+      # A worker spent several pieces as one payment (collect or send home).
+      - event: "Paid(bytes32 indexed intentHash, uint8 indexed action, address indexed to, uint256 total, uint256 amountOut)"
+        field_selection:
+          transaction_fields:
+            - hash
+
+  - name: AdvanceVault
+    events:
+      - event: "AdvanceIssued(uint256 indexed advanceId, uint256 indexed pseudonym, address indexed recipient, uint256 amount, uint256 owed)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "AdvanceRepaid(uint256 indexed advanceId, address indexed payer, uint256 paid, uint256 remaining)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "AdvanceClosed(uint256 indexed advanceId)"
+        field_selection:
+          transaction_fields:
+            - hash
+      - event: "Withdrawn(address indexed to, uint256 amount)"
+
+  # Agora Dollar. Only transfers into SigiloPay (each spent piece) and into or out of the vault
+  # are fetched: the handlers filter on the indexed `from`/`to` topics.
+  - name: AUSD
+    events:
+      - event: "Transfer(address indexed from, address indexed to, uint256 value)"
+        field_selection:
+          transaction_fields:
+            - hash
+
+chains:
+  - id: 10143 # Monad testnet
+    start_block: 69704790
+    contracts:
+      - name: SigiloRegistry
+        address: "0xba306ac85e31D43b92bc1915fF84354A08140A8B"
+        start_block: 69704790
+      - name: IncomePassportVerifier
+        address: "0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290"
+        start_block: 69704794
+      - name: SigiloPay
+        address: "0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701"
+        start_block: 69704802
+      - name: AdvanceVault
+        address: "0xdB38A7F37f45934A42f4ddD740d8F69414de7734"
+        start_block: 69763742
+      - name: AUSD
+        address: "0xa9012a055bd4e0eDfF8Ce09f960291C09D5322dC"
+        start_block: 69704802

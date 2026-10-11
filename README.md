@@ -58,6 +58,7 @@ Details: [SPEC.md §5](SPEC.md).
 | **Agora** (AUSD + Instant Settlement)           | Payroll in AUSD; Send home swaps AUSD → CTK on the Agora pair via `SigiloPay.sendHome`                                                                  |
 | **MPP** (`mppx` + `@monad-crypto/mpp`)          | `/api/v1/verify`, paid per call in AUSD (pull mode / ERC-3009)                                                                                          |
 | **Noir** + Barretenberg (UltraHonk, EVM target) | `income_passport` circuit, proved in the browser with noir_js + bb.js, verified on-chain by a generated `HonkVerifier`                                  |
+| **Envio** (HyperIndex over HyperSync)           | `packages/indexer`: network numbers, lender portfolios, and what the public record reveals; drives `/network`, the lender console and `/record/[tx]`    |
 | Convex, Next.js 16, Vercel                      | Blind backend (ciphertext, public keys, live status), app and API routes                                                                                |
 
 ## Contracts (Monad testnet, verified on MonadVision)
@@ -72,6 +73,31 @@ Details: [SPEC.md §5](SPEC.md).
 
 Source of truth: [`packages/core/src/deployments.ts`](packages/core/src/deployments.ts).
 
+## What the internet can learn (Envio)
+
+Private payroll only works if the public record really doesn't give people away, so Sigilo
+measures it. [`packages/indexer`](packages/indexer) is an Envio HyperIndex indexer over HyperSync
+that indexes every Sigilo contract on Monad testnet, decodes each payout's pieces from its
+calldata, and joins every payment with the AUSD pulls of the pieces it spent. On top of the usual
+aggregates (network totals, daily activity, one portfolio per lender vault) it **plays the
+adversary**:
+
+- **On payday:** how well each payroll hides: its sizes, the largest group of identical pieces,
+  the pieces that stand out, the average anonymity set. A payroll of one piece hides nothing about
+  the amount, and the indexer counts those too.
+- **After payday:** every payment's pieces sign the same intent, so they share an owner. The
+  indexer clusters accounts spent together (union-find: a partially spent piece spent again later
+  merges two clusters), and reports the share of pieces nobody can tie to anything, clusters that
+  reach across several payrolls or employers, the most of one payroll tied to a single person,
+  reused destinations, and advances tied to the company that repays them.
+
+It drives three screens: **[sigilo.work/network](https://sigilo.work/network)** (Sigilo in numbers,
+and what the internet can learn), the lender console's live portfolio (lent, still owed, repaid,
+available to lend), and each payroll's public record (which of its pieces were later spent
+together, and what that revealed). A replay of the full testnet history through the handlers is
+checked against on-chain state: vault balance, every advance, and every piece's balance. Details:
+[`packages/indexer/README.md`](packages/indexer/README.md).
+
 ## Repository
 
 ```
@@ -80,6 +106,7 @@ packages/core        Shared TypeScript: key schedule, Poseidon2 + Merkle trees, 
                      spend intents, encrypted receipts, passport witness builder, attestations
 packages/circuits    Noir income_passport circuit, generated artifacts, Node prover
 packages/contracts   Foundry: SigiloRegistry, IncomePassportVerifier, HonkVerifier (generated), SigiloPay, AdvanceVault
+packages/indexer     Envio HyperIndex: config.yaml, schema.graphql, handlers, and the privacy analytics
 ```
 
 ## Run it locally
@@ -98,6 +125,8 @@ pnpm dev                # http://localhost:3000
 pnpm --filter @sigilo/core test        # pinned vectors for keys, hashes, trees, one-time accounts, intents
 cd packages/circuits && pnpm test      # nargo test + a real proof in Node
 cd packages/contracts && forge test    # unit, fuzz, and a real-proof verification
+pnpm --filter @sigilo/indexer test     # Envio handlers: payroll, linkage, advances, registry
+cd packages/indexer && pnpm snapshot:testnet && pnpm test:testnet   # replay testnet history vs. chain state
 ```
 
 End-to-end on Monad testnet (needs `pnpm dev` and the testnet keys in `.env`):

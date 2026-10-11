@@ -76,7 +76,12 @@ export default function Home() {
             <span className="font-semibold">Sigilo</span>
             <span className={styles.muted}>sigilo.work</span>
           </div>
-          <p className={styles.muted}>Testnet preview: payments use test dollars.</p>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
+            <Link href="/network" className={styles.navLink}>
+              Sigilo in numbers
+            </Link>
+            <p className={styles.muted}>Testnet preview: payments use test dollars.</p>
+          </div>
         </Container>
       </footer>
       <LandingMotion />

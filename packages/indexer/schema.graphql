@@ -1,0 +1,390 @@
+# Sigilo's public record on Monad testnet, indexed with Envio HyperIndex.
+#
+# Units: AUSD amounts are base units (6 decimals); CTK amounts have 18 decimals. Times are block
+# timestamps in unix seconds. Account ids are lowercase.
+#
+# Everything here is public. The linkage entities (Cluster, Exposure and the `linked` / `unlinked`
+# fields) play the adversary: they compute what a stranger can learn from the record, so the app
+# can show both what Sigilo hides and what it can't hide.
+
+# ------------------------------------------------------------------------------- network
+
+# The whole network in one row (id "sigilo").
+type NetworkStats {
+  id: ID!
+
+  # Registry and Income Passports
+  verifiedEmployers: Int!
+  rootsPublished: Int!
+  latestRoot: String
+  passportAttestations: Int!
+
+  # Payroll
+  employers: Int!
+  payrollRuns: Int!
+  # Payouts of a single piece: the whole amount visibly went to one person.
+  singlePieceRuns: Int!
+  pieces: Int!
+  paidVolume: BigInt!
+
+  # Spending
+  spends: Int!
+  collects: Int!
+  sendHomes: Int!
+  spentVolume: BigInt!
+  sendHomeVolume: BigInt!
+  ctkDelivered: BigInt!
+
+  # What spending reveals
+  piecesSpent: Int!
+  # Payroll pieces tied to at least one other account by a payment.
+  linkedPieces: Int!
+  # Share of payroll pieces nobody can tie to any other piece (1 - linkedPieces / pieces).
+  unlinkedShare: Float!
+  # Live clusters (groups of accounts that payments proved belong together).
+  clusters: Int!
+  largestCluster: Int!
+  # Clusters that tie together pieces from two or more payroll runs (one person, several months).
+  multiRunClusters: Int!
+  # Clusters holding pieces from two or more company accounts (one person, several employers).
+  multiEmployerClusters: Int!
+  # Payment destinations that received more than one payment.
+  reusedDestinations: Int!
+
+  # Salary advances, all vaults
+  advancesIssued: Int!
+  advancesActive: Int!
+  advancesClosed: Int!
+  advancedVolume: BigInt!
+  repaidVolume: BigInt!
+  # Advances whose repayments name the company account that repays them.
+  advancesTiedToEmployer: Int!
+
+  updatedAt: Int!
+}
+
+# Activity per UTC day, for charts.
+type DailyActivity {
+  id: ID! # YYYY-MM-DD
+  dayStart: Int! @index
+  payrollRuns: Int!
+  pieces: Int!
+  paidVolume: BigInt!
+  spends: Int!
+  spentVolume: BigInt!
+  sendHomes: Int!
+  advancesIssued: Int!
+  advancedVolume: BigInt!
+  repaidVolume: BigInt!
+}
+
+# ------------------------------------------------------------------------------- registry
+
+# A registry root published by the operator (SigiloRegistry.RootPublished).
+type RegistryRoot {
+  id: ID! # index
+  index: Int! @index
+  root: String!
+  blockNumber: Int!
+  timestamp: Int!
+  txHash: String!
+}
+
+# An employer id the operator verified or unverified. The id is a commitment: it doesn't say
+# which company account pays that employer's payroll.
+type EmployerVerification {
+  id: ID! # employerId (bytes32)
+  verified: Boolean!
+  firstVerifiedAt: Int
+  updatedAt: Int!
+  changes: Int!
+}
+
+# An Income Passport attested on-chain (IncomePassportVerifier.attest). The app's lenders check
+# passports off-chain through the paid Verify API, so this stays rare.
+type PassportAttestation {
+  id: ID! # txHash-logIndex
+  scope: String!
+  pseudonym: String!
+  threshold: BigInt! # USD cents
+  firstPeriod: Int! # month index, year * 12 + month - 1
+  nonce: String!
+  registryRoot: String!
+  blockNumber: Int!
+  timestamp: Int!
+  txHash: String!
+}
+
+# ------------------------------------------------------------------------------- payroll
+
+# A company account that ran payroll (or repaid an advance). Public: it signs every payout.
+type Employer {
+  id: ID! # treasury account
+  runs: Int!
+  pieces: Int!
+  totalPaid: BigInt!
+  firstSeenAt: Int!
+  lastRunAt: Int
+  advanceRepayments: Int!
+  repaidToLenders: BigInt!
+  # Distinct advances this account repaid: each one is a worker of this company who borrowed.
+  advancesRepaid: Int!
+  payrollRuns: [PayrollRun!]! @derivedFrom(field: "employer")
+  repayments: [Repayment!]! @derivedFrom(field: "employer")
+}
+
+# One payroll payout (SigiloPay.disperse): N fixed-size pieces, shuffled, each to a new account.
+type PayrollRun {
+  id: ID! # transaction hash
+  txHash: String! @index
+  employer: Employer!
+  employerRunNumber: Int!
+  blockNumber: Int!
+  timestamp: Int! @index
+  pieceCount: Int!
+  total: BigInt!
+  # Pieces decoded from the payout's calldata. False if the payout didn't call SigiloPay directly.
+  decoded: Boolean!
+
+  # What a stranger sees at payout time.
+  distinctAmounts: Int!
+  # The most pieces that share one amount, and that amount.
+  largestGroup: Int!
+  largestGroupAmount: BigInt!
+  # Pieces whose amount appears only once in the payout: they stand out.
+  uniquePieces: Int!
+  # On average, how many identical pieces each piece hides among.
+  meanAnonymitySet: Float!
+
+  # What spending revealed since (updated as pieces are spent).
+  piecesSpent: Int!
+  linkedPieces: Int!
+  unlinkedShare: Float!
+  # The most AUSD of this payout that payments tie to a single owner (two or more of its pieces
+  # spent by the same person add up to a lower bound on their pay).
+  largestExposure: BigInt!
+
+  pieces: [Piece!]! @derivedFrom(field: "run")
+  denominations: [RunDenomination!]! @derivedFrom(field: "run")
+  exposures: [Exposure!]! @derivedFrom(field: "run")
+}
+
+# How many pieces of one size a payout had.
+type RunDenomination {
+  id: ID! # runId-amount
+  run: PayrollRun!
+  amount: BigInt!
+  count: Int!
+}
+
+# Every piece size ever paid, across all payouts.
+type Denomination {
+  id: ID! # amount
+  amount: BigInt! @index
+  issued: Int!
+  spent: Int!
+  volume: BigInt!
+  runs: Int!
+}
+
+enum PieceSource {
+  PAYROLL # a payroll piece
+  ADVANCE # a salary advance's one-time account
+  PAYMENT # an account that received a Sigilo payment and later spent it
+  UNKNOWN # funded outside Sigilo's public record
+}
+
+# A one-time account that held Sigilo money.
+type Piece {
+  id: ID! # account
+  source: PieceSource!
+  run: PayrollRun
+  employer: Employer
+  advance: Advance
+  # What the account received from the payout or advance (0 when the funding isn't known).
+  amount: BigInt!
+  receivedAt: Int!
+  spentAmount: BigInt!
+  spendCount: Int!
+  firstSpentAt: Int
+  # The group of accounts payments proved belong together; unset until the piece is spent.
+  cluster: Cluster
+  # True once a payment ties this account to any other.
+  linked: Boolean!
+  inputs: [SpendInput!]! @derivedFrom(field: "piece")
+}
+
+# ------------------------------------------------------------------------------- spending
+
+enum SpendKind {
+  COLLECT # move money to another account
+  SEND_HOME # AUSD swapped to CTK on Agora and delivered
+}
+
+# One payment that spent several pieces at once (SigiloPay.collect / sendHome).
+type Spend {
+  id: ID! # intent hash
+  kind: SpendKind!
+  txHash: String! @index
+  blockNumber: Int!
+  timestamp: Int! @index
+  recipient: String!
+  destination: Destination!
+  total: BigInt!
+  # AUSD forwarded (collect) or CTK delivered (send home).
+  amountOut: BigInt!
+  inputCount: Int!
+  # Inputs that kept a remainder: spending them again later links the two payments.
+  partialInputs: Int!
+  # Distinct payroll runs among the inputs.
+  runsLinked: Int!
+  # Payroll pieces this payment tied to another account for the first time.
+  newlyLinkedPieces: Int!
+  cluster: Cluster!
+  inputs: [SpendInput!]! @derivedFrom(field: "spend")
+}
+
+# A piece pulled into a payment (its AUSD Transfer into SigiloPay).
+type SpendInput {
+  id: ID! # spendId-position
+  spend: Spend!
+  piece: Piece!
+  amount: BigInt!
+  # The piece was spent in full.
+  emptied: Boolean!
+}
+
+# Where payments went.
+type Destination {
+  id: ID! # account
+  spends: Int!
+  received: BigInt! # AUSD from collects
+  ctkReceived: BigInt! # CTK from send homes
+  firstSeenAt: Int!
+  lastSeenAt: Int!
+  payments: [Spend!]! @derivedFrom(field: "destination")
+}
+
+# Accounts that payments proved belong to one owner (all inputs of a payment share an owner).
+# Union-find: when a payment spends accounts from two clusters, the smaller merges into the larger.
+type Cluster {
+  id: ID! # the first payment that formed it
+  active: Boolean! @index
+  mergedInto: Cluster
+  size: Int! @index
+  payrollPieces: Int!
+  spendCount: Int!
+  volume: BigInt!
+  runCount: Int!
+  employerCount: Int!
+  includesAdvance: Boolean!
+  # The most AUSD of one payout that this cluster ties to its owner.
+  largestExposure: BigInt!
+  pieceIds: [String!]!
+  spendIds: [String!]!
+  runIds: [String!]!
+  employerIds: [String!]!
+  createdAt: Int!
+  updatedAt: Int!
+  pieces: [Piece!]! @derivedFrom(field: "cluster")
+  spends: [Spend!]! @derivedFrom(field: "cluster")
+  exposures: [Exposure!]! @derivedFrom(field: "cluster")
+}
+
+# What one cluster reveals about one payout: two or more of its pieces share an owner, so that
+# person received at least `amount` in it.
+type Exposure {
+  id: ID! # clusterId-runId
+  cluster: Cluster!
+  run: PayrollRun!
+  pieces: Int!
+  amount: BigInt!
+  # False once the cluster merged into another (its successor carries the exposure).
+  active: Boolean!
+}
+
+# ------------------------------------------------------------------------------- advances
+
+enum AdvanceStatus {
+  ACTIVE
+  CLOSED
+}
+
+# One lender's AdvanceVault.
+type LenderPortfolio {
+  id: ID! # vault
+  advancesIssued: Int!
+  activeAdvances: Int!
+  closedAdvances: Int!
+  # Distinct pseudonyms (unique to this vault, so borrowers can't be matched across lenders).
+  borrowers: Int!
+  repeatBorrowers: Int!
+  lent: BigInt!
+  owedTotal: BigInt!
+  feesExpected: BigInt!
+  repaid: BigInt!
+  outstanding: BigInt!
+  # repaid / owedTotal
+  repaymentRate: Float!
+  # Every AUSD transfer into and out of the vault; liquidity is the vault's balance.
+  fundsIn: BigInt!
+  fundsOut: BigInt!
+  deposits: BigInt!
+  withdrawn: BigInt!
+  liquidity: BigInt!
+  lastActivityAt: Int!
+  advances: [Advance!]! @derivedFrom(field: "vault")
+}
+
+# A borrower as one lender sees them: a pseudonym only that lender's vault accepts.
+type Borrower {
+  id: ID! # vault-pseudonym
+  vault: LenderPortfolio!
+  pseudonym: String!
+  advances: Int!
+  borrowed: BigInt!
+}
+
+type Advance {
+  id: ID! # vault-advanceId
+  vault: LenderPortfolio!
+  advanceId: Int!
+  borrower: Borrower!
+  recipient: String!
+  principal: BigInt!
+  owed: BigInt!
+  fee: BigInt!
+  repaid: BigInt!
+  remaining: BigInt!
+  progress: Float!
+  status: AdvanceStatus! @index
+  issuedAt: Int!
+  issuedTx: String!
+  closedAt: Int
+  closedTx: String
+  repaymentCount: Int!
+  # The company account whose payroll repays it. Public: repayments come from that account.
+  repaidBy: Employer
+  repayments: [Repayment!]! @derivedFrom(field: "advance")
+}
+
+type Repayment {
+  id: ID! # txHash-logIndex
+  advance: Advance!
+  # The account that paid (in Sigilo, the employer's treasury during payroll).
+  employer: Employer!
+  amount: BigInt!
+  remaining: BigInt!
+  timestamp: Int!
+  txHash: String!
+}
+
+# ------------------------------------------------------------------------------- internal
+
+# Pieces pulled into SigiloPay in one transaction, waiting for that transaction's Paid event.
+type PendingPulls @internal {
+  id: ID! # transaction hash
+  accounts: [String!]!
+  amounts: [BigInt!]!
+  consumed: Int!
+}

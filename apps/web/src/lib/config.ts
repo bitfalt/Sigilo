@@ -11,3 +11,5 @@ export const MONAD_RPC_URL =
   process.env.NEXT_PUBLIC_MONAD_RPC_URL ?? "https://testnet-rpc.monad.xyz";
 export const EXPLORER_URL =
   process.env.NEXT_PUBLIC_EXPLORER_URL ?? "https://testnet.monadvision.com";
+/** GraphQL endpoint of the Envio indexer (packages/indexer). Unset until it's deployed. */
+export const ENVIO_GRAPHQL_URL = process.env.NEXT_PUBLIC_ENVIO_GRAPHQL_URL ?? "";
