@@ -81,6 +81,7 @@ const requestView = v.object({
       firstPeriod: v.number(),
       months: v.number(),
       pseudonym: v.string(),
+      registryRoot: v.string(),
       verifiedAt: v.number(),
       paymentReference: v.optional(v.string()),
     }),
@@ -148,6 +149,7 @@ export const get = query({
         firstPeriod: attestation.firstPeriod,
         months: attestation.months,
         pseudonym: verification.pseudonym,
+        registryRoot: verification.registryRoot,
         verifiedAt: attestation.verifiedAt,
         ...(verification.paymentReceipt ? { paymentReference: verification.paymentReceipt } : {}),
       };

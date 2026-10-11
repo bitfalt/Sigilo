@@ -51,27 +51,40 @@ Details: [SPEC.md §5](SPEC.md).
 
 ## Built with
 
-| Sponsor / tech                                  | Used for                                                                                                                                                |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Monad** (testnet, chain 10143)                | All contracts; sub-second payouts and transfers                                                                                                         |
-| **Mera** (`@category-labs/mera`)                | The entire account layer: passkey onboarding, signing sessions, and PRF namespaces for non-account keys (passport secret, treasury, payslip encryption) |
-| **Agora** (AUSD + Instant Settlement)           | Payroll in AUSD; Send home swaps AUSD → CTK on the Agora pair via `SigiloPay.sendHome`                                                                  |
-| **MPP** (`mppx` + `@monad-crypto/mpp`)          | `/api/v1/verify`, paid per call in AUSD (pull mode / ERC-3009)                                                                                          |
-| **Noir** + Barretenberg (UltraHonk, EVM target) | `income_passport` circuit, proved in the browser with noir_js + bb.js, verified on-chain by a generated `HonkVerifier`                                  |
-| **Envio** (HyperIndex over HyperSync)           | `packages/indexer`: network numbers, lender portfolios, and what the public record reveals; drives `/network`, the lender console and `/record/[tx]`    |
-| Convex, Next.js 16, Vercel                      | Blind backend (ciphertext, public keys, live status), app and API routes                                                                                |
+| Sponsor / tech                                  | Used for                                                                                                                                                                   |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Monad** (testnet, chain 10143)                | All contracts; sub-second payouts and transfers                                                                                                                            |
+| **Mera** (`@category-labs/mera`)                | The entire account layer: passkey onboarding, signing sessions, and PRF namespaces for non-account keys (passport secret, treasury, payslip encryption)                    |
+| **Agora** (AUSD + Instant Settlement)           | Payroll in AUSD; Send home swaps AUSD → CTK on the Agora pair via `SigiloPay.sendHome`                                                                                     |
+| **MPP** (`mppx` + `@monad-crypto/mpp`)          | `/api/v1/verify`, paid per call in AUSD (pull mode / ERC-3009)                                                                                                             |
+| **Noir** + Barretenberg (UltraHonk, EVM target) | `income_passport` circuit, proved in the browser with noir_js + bb.js, verified on-chain by a generated `HonkVerifier`                                                     |
+| **Envio** (HyperIndex over HyperSync)           | `packages/indexer`: network numbers, lender portfolios, and what the public record reveals; drives `/network`, the lender console and `/record/[tx]`                       |
+| **Chainlink CRE**                               | `packages/cre`: the monthly "payday" workflow rebuilds every payroll record from the public data and flags late advance installments, reporting to `SigiloOracle` on Monad |
+| Convex, Next.js 16, Vercel                      | Blind backend (ciphertext, public keys, live status), app and API routes                                                                                                   |
 
 ## Contracts (Monad testnet, verified on MonadVision)
 
-| Contract                        | Address                                                                                                                            |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `SigiloRegistry`                | [`0xba306ac85e31D43b92bc1915fF84354A08140A8B`](https://testnet.monadvision.com/address/0xba306ac85e31D43b92bc1915fF84354A08140A8B) |
-| `HonkVerifier`                  | [`0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177`](https://testnet.monadvision.com/address/0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177) |
-| `IncomePassportVerifier`        | [`0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290`](https://testnet.monadvision.com/address/0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290) |
-| `SigiloPay`                     | [`0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701`](https://testnet.monadvision.com/address/0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701) |
-| `AdvanceVault` (Fondo Quincena) | [`0xdB38A7F37f45934A42f4ddD740d8F69414de7734`](https://testnet.monadvision.com/address/0xdB38A7F37f45934A42f4ddD740d8F69414de7734) |
+| Contract                                | Address                                                                                                                            |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `SigiloRegistry`                        | [`0xba306ac85e31D43b92bc1915fF84354A08140A8B`](https://testnet.monadvision.com/address/0xba306ac85e31D43b92bc1915fF84354A08140A8B) |
+| `HonkVerifier`                          | [`0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177`](https://testnet.monadvision.com/address/0xB2C7D31fd760e085D13c4D3FC40fAE3b40c56177) |
+| `IncomePassportVerifier`                | [`0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290`](https://testnet.monadvision.com/address/0x0e40B46A82a79C0a4b0A9957bBD32AE6B5a4B290) |
+| `SigiloPay`                             | [`0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701`](https://testnet.monadvision.com/address/0xBeDbFae158ed456E546bC0eE2c2b1405F8AbB701) |
+| `AdvanceVault` (Fondo Quincena)         | [`0xdB38A7F37f45934A42f4ddD740d8F69414de7734`](https://testnet.monadvision.com/address/0xdB38A7F37f45934A42f4ddD740d8F69414de7734) |
+| `SigiloOracle` (Chainlink CRE consumer) | [`0xA2750a6aa2cCaD241e2c8d21d06C8C19e789890D`](https://testnet.monadvision.com/address/0xA2750a6aa2cCaD241e2c8d21d06C8C19e789890D) |
 
 Source of truth: [`packages/core/src/deployments.ts`](packages/core/src/deployments.ts).
+
+## Payday, checked by Chainlink (CRE)
+
+Every Income Passport is proven against payroll records that Sigilo publishes on-chain, so today Sigilo vouches for them alone. [`packages/cre`](packages/cre) is a Chainlink CRE workflow that takes that trust away and runs payroll-deducted credit's collections, as the orchestration layer between Sigilo's backend, Monad and the lender:
+
+1. **Triggers:** a monthly payday schedule, and every `RootPublished` event on `SigiloRegistry`.
+2. **Sigilo's backend (HTTP, with consensus):** the public payroll records and the advances due, as amounts only. No employer, name or salary ever leaves the backend.
+3. **Independent check:** each node rebuilds the Poseidon2 payroll tree from the public records and checks it against the on-chain root; it reads every advance from `AdvanceVault` and marks installments that payroll didn't repay on time.
+4. **Report to Monad:** one signed report to [`SigiloOracle`](https://testnet.monadvision.com/address/0xA2750a6aa2cCaD241e2c8d21d06C8C19e789890D). The lender console shows "Payroll records checked independently by Chainlink" on verified income checks, and flags late installments.
+
+Simulated with the CRE CLI, including `--broadcast` through Chainlink's Monad testnet forwarder (for example [this report](https://testnet.monadvision.com/tx/0x7a2dc3fe6f6cef9ea404a340375a65a413781efc6389fcac9ebb293822b4d91e)). Commands in [`packages/cre/README.md`](packages/cre/README.md).
 
 ## What the internet can learn (Envio)
 

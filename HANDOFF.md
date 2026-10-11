@@ -48,7 +48,7 @@ Each smoke/e2e run moves 0.25 MON from the faucet to a test employer. Top up the
 ## Chainlink CRE payday workflow (packages/cre)
 
 See `packages/cre/README.md`. CLI at `~/.cre/bin/cre` (v1.38.0), logged in (org "My Org", deploy access not enabled). Simulate from `packages/cre` (after `bun install && bunx cre-setup` in `payday/`):
-`~/.cre/bin/cre workflow simulate payday --target local-simulation --non-interactive --trigger-index 0` (cron) and `--trigger-index 1 --evm-tx-hash <RootPublished tx> --evm-event-index 0` (log). Broadcast (real report on Monad testnet) needs `SigiloOracle` deployed (`cd packages/contracts && pnpm deploy:oracle`), its address in `packages/core/src/deployments.ts` and `payday/config.staging.json`, and a funded `CRE_ETH_PRIVATE_KEY` in `packages/cre/.env`; then `--target staging-settings --broadcast`.
+`~/.cre/bin/cre workflow simulate payday --target local-simulation --non-interactive --trigger-index 0` (cron) and `--trigger-index 1 --evm-tx-hash <RootPublished tx> --evm-event-index 0` (log). `SigiloOracle` is deployed at `0xA2750a6aa2cCaD241e2c8d21d06C8C19e789890D` (mock forwarder). Broadcast a real report (the key goes from the root `.env` straight into the CLI, never printed): `cd packages/cre && ( set -a; . ../../.env; set +a; export CRE_ETH_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY"; ~/.cre/bin/cre workflow simulate payday --target staging-settings --non-interactive --trigger-index 0 --broadcast )`. Staging points at the dev backend; production config at prod. The lender console reads `SigiloOracle.rootStatus(root)` and `isLate(vault, id)`.
 
 **Shared registry caveat:** dev and prod Convex publish roots to the same `SigiloRegistry` (history of 64 roots). Every dev payroll run pushes prod roots toward eviction, which would break prod Income Passports until the next prod payroll; keep dev payroll tests few once prod demo data exists. A CRE run pointed at one backend reports the other backend's roots as `RootMismatch`.
 
@@ -57,7 +57,7 @@ See `packages/cre/README.md`. CLI at `~/.cre/bin/cre` (v1.38.0), logged in (org 
 HyperIndex over HyperSync for all Sigilo contracts plus the AUSD transfers that matter; feeds `/network`, the lender console's portfolio and `/record/[tx]` (details: `packages/indexer/README.md`). Envio Cloud is connected to this repo (Indexer Directory `./packages/indexer`, config `config.yaml`, release branch `envio`, free Development plan).
 
 1. Deploy: `git push origin main:envio` (each push re-indexes from block 69,704,790 in a few minutes; the old deployment serves until the new one is synced).
-2. Copy the deployment's GraphQL URL from the Envio dashboard into Vercel Production: `printf %s "$URL" | vercel env add NEXT_PUBLIC_ENVIO_GRAPHQL_URL production`, then redeploy prod (it's inlined at build time). Add it to `.env` for local dev too.
+2. Done 2026-10-11: `NEXT_PUBLIC_ENVIO_GRAPHQL_URL=https://indexer.dev.hyperindex.xyz/177e0bd/v1/graphql` (Vercel Production + root `.env`). Free plan limit: 100 requests/min. For a new deployment, copy its GraphQL URL from the Envio dashboard into Vercel Production: `printf %s "$URL" | vercel env add NEXT_PUBLIC_ENVIO_GRAPHQL_URL production`, then redeploy prod (it's inlined at build time). Add it to `.env` for local dev too.
 3. Until then every consumer degrades: `/network` says the live numbers are on their way, the lender portfolio and the record page's "Since payday" are hidden.
 4. Dev plan fair use: soft limit 100k events (we're at ~150 filtered events), deployments older than 30 days are deleted, 3 deployments per indexer (delete old ones before pushing a fourth).
 5. Verify against the chain any time: `cd packages/indexer && pnpm snapshot:testnet && pnpm test:testnet`.
@@ -78,7 +78,7 @@ Done 2026-10-10: Vercel CLI is logged in and linked (`apps/web/.vercel`, team `b
 
 ## Notes and gotchas
 
-- If the dev server starts reloading pages in a loop after big merges, restart `pnpm dev`.
+- If the dev server reloads every page in a loop ("[Fast Refresh] rebuilding" ~18×/s, it also burns the Envio rate limit), stop it, `rm -rf apps/web/.next/dev`, and start `pnpm dev` again.
 - Convex env (both deployments): `SESSION_PRIVATE_JWK`, `SESSION_PUBLIC_JWK`, `ALLOWED_ORIGINS`, `OPERATOR_PRIVATE_KEY`, `FAUCET_PRIVATE_KEY`, `MONAD_RPC_URL`.
 - Monad reserve balance: <10 MON accounts can only send value if idle for 3 blocks, and ~1 tx per 3 blocks; check receipt status.
 - MPP: `mppx` pinned to 0.4.8 (what `@monad-crypto/mpp@0.0.3` was built against); `patches/@monad-crypto__mpp@0.0.3.patch` adds testnet AUSD to `erc3009Tokens`. Pass `currency` = AUSD and `decimals: 6`; create `Mppx` lazily.

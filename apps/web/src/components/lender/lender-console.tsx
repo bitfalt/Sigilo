@@ -18,6 +18,7 @@ import { SealMark } from "@/components/landing/seal-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { EXPLORER_URL } from "@/lib/config";
+import { isLate, type RootStatus, rootStatus } from "@/lib/oracle";
 import { errorMessage } from "@/lib/errors";
 import { periodLabel } from "@/lib/periods";
 import { formatAmount } from "@/lib/wallet";
@@ -299,6 +300,7 @@ function CheckDetail({ id }: { id: string }) {
           months={check.result.months}
           firstPeriod={check.result.firstPeriod}
           pseudonym={check.result.pseudonym}
+          registryRoot={check.result.registryRoot}
           paymentReference={check.result.paymentReference}
         />
       )}
@@ -394,9 +396,10 @@ function VerifiedResult(props: {
   months: number;
   firstPeriod: number;
   pseudonym: string;
+  registryRoot: string;
   paymentReference?: string;
 }) {
-  const { valid, amount, months, firstPeriod, pseudonym, paymentReference } = props;
+  const { valid, amount, months, firstPeriod, pseudonym, registryRoot, paymentReference } = props;
   const range = `${periodLabel(firstPeriod)} to ${periodLabel(firstPeriod + months - 1)}`;
   const receipt = paymentReference ? `${EXPLORER_URL}/tx/${paymentReference}` : null;
 
@@ -436,6 +439,7 @@ function VerifiedResult(props: {
             <Fact ok>Every month from {range}</Fact>
             <Fact ok>Paid by an employer verified by Sigilo</Fact>
           </ul>
+          <ChainlinkCheck root={registryRoot} />
         </div>
         <div>
           <p className="font-wide text-base">What you didn&apos;t need to see</p>
@@ -484,6 +488,8 @@ function AdvancePanel({
   thresholdCents: number;
   offer?: { amountCents: number; installments: number; feeBps: number };
   advance?: {
+    advanceId: string;
+    vault: string;
     amount: string;
     owed: string;
     txHash: string;
@@ -517,38 +523,7 @@ function AdvancePanel({
   }
 
   if (advance) {
-    const owedCents = Number(BigInt(advance.owed) / 10_000n);
-    const repaid = advance.remainingCents === undefined ? 0 : owedCents - advance.remainingCents;
-    return (
-      <div className="border-foreground/15 flex flex-col gap-3 border-t pt-6">
-        <p className="font-wide text-lg">Salary advance</p>
-        <p className="text-[1.0625rem]">
-          Sent {formatAmount(Number(BigInt(advance.amount) / 10_000n))}.{" "}
-          {advance.status === "closed"
-            ? "Fully repaid from payroll."
-            : `Repaid ${formatAmount(repaid)} of ${formatAmount(owedCents)} from payroll.`}
-        </p>
-        <div className="bg-secondary h-2 overflow-hidden rounded-full">
-          <div
-            className="bg-primary h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
-            style={{ width: `${Math.min(100, (repaid / owedCents) * 100)}%` }}
-          />
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {advance.installments
-            ? `${advance.paidInstallments ?? 0} of ${advance.installments} paychecks deducted by the employer.`
-            : "Waiting for the applicant to set up the payroll deduction."}{" "}
-          <a
-            href={`${EXPLORER_URL}/tx/${advance.txHash}`}
-            target="_blank"
-            rel="noreferrer"
-            className="underline"
-          >
-            View payment
-          </a>
-        </p>
-      </div>
-    );
+    return <AdvanceProgress advance={advance} />;
   }
 
   if (offer) {
@@ -615,5 +590,92 @@ function AdvancePanel({
       </div>
       {error && <p className="text-destructive text-sm">{error}</p>}
     </form>
+  );
+}
+
+/** Whether Chainlink's payday workflow rebuilt this payroll record from the public data. */
+function ChainlinkCheck({ root }: { root: string }) {
+  const [status, setStatus] = useState<RootStatus | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    rootStatus(root as `0x${string}`).then(
+      (s) => !cancelled && setStatus(s),
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [root]);
+  if (!status) return null;
+  if (status.mismatchAt) {
+    return (
+      <p className="text-destructive mt-3 text-sm">
+        Chainlink couldn&apos;t match these payroll records to the public data.
+      </p>
+    );
+  }
+  return (
+    <p className="text-muted-foreground mt-3 flex items-start gap-2 text-sm">
+      <SealMark className="text-primary mt-0.5 size-4 shrink-0" />
+      {status.checkedAt
+        ? `Payroll records checked independently by Chainlink on ${status.checkedAt.toLocaleDateString("en-US", { month: "short", day: "numeric" })}.`
+        : "Payroll records are checked independently by Chainlink every payday."}
+    </p>
+  );
+}
+
+function AdvanceProgress({
+  advance,
+}: {
+  advance: NonNullable<Parameters<typeof AdvancePanel>[0]["advance"]>;
+}) {
+  // Chainlink's payday workflow flags installments that payroll didn't repay on time.
+  const [late, setLate] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    isLate(advance.vault as `0x${string}`, BigInt(advance.advanceId)).then(
+      (l) => !cancelled && setLate(l),
+      () => {},
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, [advance.vault, advance.advanceId]);
+  const owedCents = Number(BigInt(advance.owed) / 10_000n);
+  const repaid = advance.remainingCents === undefined ? 0 : owedCents - advance.remainingCents;
+  return (
+    <div className="border-foreground/15 flex flex-col gap-3 border-t pt-6">
+      <p className="font-wide text-lg">Salary advance</p>
+      {late && (
+        <p className="text-destructive text-sm font-semibold">
+          An installment is late: payroll didn&apos;t repay it on time (checked by Chainlink).
+        </p>
+      )}
+      <p className="text-[1.0625rem]">
+        Sent {formatAmount(Number(BigInt(advance.amount) / 10_000n))}.{" "}
+        {advance.status === "closed"
+          ? "Fully repaid from payroll."
+          : `Repaid ${formatAmount(repaid)} of ${formatAmount(owedCents)} from payroll.`}
+      </p>
+      <div className="bg-secondary h-2 overflow-hidden rounded-full">
+        <div
+          className="bg-primary h-full rounded-full transition-[width] duration-500 motion-reduce:transition-none"
+          style={{ width: `${Math.min(100, (repaid / owedCents) * 100)}%` }}
+        />
+      </div>
+      <p className="text-muted-foreground text-sm">
+        {advance.installments
+          ? `${advance.paidInstallments ?? 0} of ${advance.installments} paychecks deducted by the employer.`
+          : "Waiting for the applicant to set up the payroll deduction."}{" "}
+        <a
+          href={`${EXPLORER_URL}/tx/${advance.txHash}`}
+          target="_blank"
+          rel="noreferrer"
+          className="underline"
+        >
+          View payment
+        </a>
+      </p>
+    </div>
   );
 }
