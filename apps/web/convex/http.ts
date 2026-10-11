@@ -114,4 +114,17 @@ http.route({
   ),
 });
 
+// Chainlink CRE "payday" workflow (packages/cre): public registry leaves and the advances due.
+// Called server to server by the DON nodes, so no CORS. See convex/cre.ts for the privacy rules.
+http.route({
+  path: "/cre/payday",
+  method: "GET",
+  handler: httpAction(async (ctx) => {
+    const body = await ctx.runQuery(internal.cre.payday, { now: Date.now() });
+    return new Response(JSON.stringify(body), {
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store" },
+    });
+  }),
+});
+
 export default http;

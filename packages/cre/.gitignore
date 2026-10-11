@@ -1,0 +1,11 @@
+# Secrets: the CRE CLI reads CRE_ETH_PRIVATE_KEY from here. Never commit it.
+*.env
+.env
+.env.*
+
+# Dependencies and build output
+node_modules/
+dist/
+*.wasm
+.cre_build_tmp.*
+.workflow-temp-*

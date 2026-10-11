@@ -15,3 +15,4 @@ apps/web/.agents
 apps/web/.claude
 packages/indexer/.envio
 packages/indexer/.cache
+packages/cre/**/.cre_build_tmp.*
