@@ -93,6 +93,12 @@ describe("payroll runs", () => {
               payer: acme,
               pieces: pieces.map((p, i) => ({ ...p, account: account(`feb-${i}`) })),
             }),
+            // A one-person company paid in one piece: its payroll hides nothing about the amount.
+            payroll({
+              step: 3,
+              payer: account("solo"),
+              pieces: [{ account: account("solo-1"), amount: usd(20) }],
+            }),
           ],
         },
       },
@@ -108,9 +114,10 @@ describe("payroll runs", () => {
       runs: 2,
     });
     t.expect(await indexer.NetworkStats.getOrThrow("sigilo")).toMatchObject({
-      employers: 1,
-      payrollRuns: 2,
-      pieces: 18,
+      employers: 2,
+      payrollRuns: 3,
+      singlePieceRuns: 1,
+      pieces: 19,
     });
   });
 

@@ -137,6 +137,7 @@ describe.skipIf(!existsSync(CACHE))("testnet replay", () => {
     t.expect(stats.payrollRuns).toBe(count("Dispersed"));
     t.expect(runs.filter((r) => !r.decoded)).toEqual([]);
     t.expect(stats.pieces).toBe(runs.reduce((n, r) => n + r.pieceCount, 0));
+    t.expect(stats.singlePieceRuns).toBe(runs.filter((r) => r.pieceCount === 1).length);
     t.expect(stats.paidVolume).toBe(runs.reduce((s, r) => s + r.total, 0n));
 
     // Every payment's pulled pieces add up to its total.

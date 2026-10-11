@@ -124,6 +124,8 @@ indexer.onEvent({ contract: "SigiloPay", event: "Dispersed" }, async ({ event, c
     // An account that only repaid advances so far becomes a payroll employer now.
     employers: stats.employers + (employer && employer.runs > 0 ? 0 : 1),
     payrollRuns: stats.payrollRuns + 1,
+    // A one-piece payout hides nothing about the amount: it all went to one person.
+    singlePieceRuns: stats.singlePieceRuns + (pieceCount === 1 ? 1 : 0),
     pieces,
     paidVolume: stats.paidVolume + event.params.total,
     unlinkedShare: unlinkedShare(stats.linkedPieces, pieces),

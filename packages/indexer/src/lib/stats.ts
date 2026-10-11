@@ -15,6 +15,7 @@ export function emptyStats(): NetworkStats {
     passportAttestations: 0,
     employers: 0,
     payrollRuns: 0,
+    singlePieceRuns: 0,
     pieces: 0,
     paidVolume: 0n,
     spends: 0,

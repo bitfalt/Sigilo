@@ -22,6 +22,8 @@ type NetworkStats {
   # Payroll
   employers: Int!
   payrollRuns: Int!
+  # Payouts of a single piece: the whole amount visibly went to one person.
+  singlePieceRuns: Int!
   pieces: Int!
   paidVolume: BigInt!
 
