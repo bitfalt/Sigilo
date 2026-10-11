@@ -75,17 +75,19 @@ export function observe(
 ): BackendObservation {
   const total = body.leaves.length;
   const target = BigInt(targetRoot);
-  const matched =
-    target === 0n
-      ? 0
-      : coveringPrefix(
-          body.leaves,
-          target,
-          prefixCandidates(total, hint > 0 ? hint : undefined, window),
-        );
+  const fullRoot = registryRoot(body.leaves);
+  let matched = 0;
+  if (target !== 0n) {
+    // The common case (the root covers every leaf) costs one tree, not two.
+    const shorter = prefixCandidates(total, hint > 0 ? hint : undefined, window).filter(
+      (k) => k !== total,
+    );
+    matched =
+      total > 0 && target === fullRoot ? total : coveringPrefix(body.leaves, target, shorter);
+  }
   return {
     leafCount: total,
-    fullRoot: fieldToHex(registryRoot(body.leaves)),
+    fullRoot: fieldToHex(fullRoot),
     matchedLeafCount: matched,
     advances: body.advances.map((a) => ({
       vault: a.vault,
