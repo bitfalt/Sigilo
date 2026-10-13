@@ -103,9 +103,9 @@ Command A, local simulation (no key needed):
 
 Command B, broadcast to Monad testnet. The key is read from `.env` and never printed.
 ```bash
-( set -a; . ../../.env; set +a; export CRE_ETH_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY"; ~/.cre/bin/cre workflow simulate payday --target staging-settings --non-interactive --trigger-index 0 --broadcast )
+( set -a; . ../../.env; set +a; export CRE_ETH_PRIVATE_KEY="$DEPLOYER_PRIVATE_KEY"; ~/.cre/bin/cre workflow simulate payday --target production-settings --non-interactive --trigger-index 0 --broadcast )
 ```
-Staging points at the dev backend. To check **production** payroll on camera, use `--target production-settings` instead. Ask Claude to run it once first to be safe.
+`production-settings` checks sigilo.work's own payroll records (tested: it confirmed production's record in tx 0x0bc72ab747515cdf4d97340f2a5c50f8d6bcf1962754246bb83ebe9a8f06f2e9). Run it right after the September payroll so the lender's verified check shows "checked by Chainlink".
 
 ---
 
