@@ -1,0 +1,1406 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sigilo pitch</title>
+    <meta
+      name="description"
+      content="Sigilo: private payroll, Income Passports and payroll-deducted credit on Monad."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14.5' fill='%23e8eee9' stroke='%232a3cb0' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='6' fill='none' stroke='%232a3cb0' stroke-width='2'/%3E%3C/svg%3E"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap"
+    />
+    <style>
+      /* Sigilo pitch deck. One 1920x1080 stage, scaled to fit the viewport and letterboxed.
+         Colors match the Sigilo app (apps/web/src/components/landing/landing.css). */
+      :root {
+        --paper: #e8eee9;
+        --paper-shade: #dbe5de;
+        --slip: #fbfcfa;
+        --ink: #0f2a20;
+        --muted: #4f6359;
+        --guilloche: #3f7f67;
+        --seal: #2a3cb0;
+        --seal-ink: #f4f6ff;
+        --red: #b23a48;
+        --rule: rgba(15, 42, 32, 0.16);
+        --letterbox: #d2ddd5;
+        color-scheme: light;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+        background: var(--letterbox);
+      }
+
+      body {
+        font-family: "Archivo", ui-sans-serif, system-ui, sans-serif;
+        color: var(--ink);
+        font-variant-numeric: tabular-nums;
+        -webkit-font-smoothing: antialiased;
+        cursor: default;
+        user-select: none;
+      }
+
+      .stage {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 1920px;
+        height: 1080px;
+        transform: translate(-50%, -50%) scale(var(--s, 0.5));
+        background: var(--paper);
+        overflow: hidden;
+      }
+
+      .slide {
+        position: absolute;
+        inset: 0;
+        padding: 104px 128px 120px;
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          opacity 0.35s ease,
+          visibility 0s linear 0.35s;
+      }
+
+      .slide.is-active {
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.35s ease;
+      }
+
+      /* ---------- Type ---------- */
+
+      .display {
+        font-stretch: 125%;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 0.98;
+        text-wrap: balance;
+      }
+
+      .heading {
+        font-stretch: 118%;
+        font-weight: 720;
+        letter-spacing: -0.015em;
+        line-height: 1.08;
+        text-wrap: balance;
+      }
+
+      .h2 {
+        font-size: 92px;
+        max-width: 1500px;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .fine {
+        font-stretch: 78%;
+        letter-spacing: 0.02em;
+      }
+
+      /* ---------- Signature pieces ---------- */
+
+      .slip {
+        background: var(--slip);
+        border-radius: 8px;
+        box-shadow:
+          0 1px 0 rgba(15, 42, 32, 0.06),
+          0 28px 56px -30px rgba(15, 42, 32, 0.5);
+      }
+
+      .tear {
+        border-top: 3px dashed rgba(15, 42, 32, 0.22);
+      }
+
+      .perforation {
+        height: 10px;
+        background-image: radial-gradient(circle, var(--ink) 2px, transparent 2.4px);
+        background-size: 16px 10px;
+        background-repeat: repeat-x;
+        background-position: 0 50%;
+        opacity: 0.35;
+      }
+
+      .stamp {
+        color: var(--seal);
+        border: 3px solid currentColor;
+        outline: 1.5px solid currentColor;
+        outline-offset: 5px;
+        border-radius: 14px;
+        background: rgba(244, 246, 255, 0.86);
+        rotate: -3deg;
+      }
+
+      .seal {
+        display: block;
+        color: var(--seal);
+      }
+
+      .rosette {
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .rosette path,
+      .rosette circle {
+        fill: none;
+        stroke-linecap: round;
+      }
+
+      .r-band {
+        stroke: var(--guilloche);
+        stroke-width: 0.55;
+        opacity: 0.55;
+      }
+
+      .r-loop {
+        stroke: var(--seal);
+        stroke-width: 0.4;
+        opacity: 0.5;
+      }
+
+      .r-inner {
+        stroke: var(--guilloche);
+        stroke-width: 0.5;
+        opacity: 0.6;
+      }
+
+      .r-ring {
+        stroke: var(--seal);
+        stroke-width: 0.9;
+        opacity: 0.55;
+      }
+
+      /* Quiet corner rosettes on the content slides: printed, never animated. */
+      .rosette.faint {
+        opacity: 0.22;
+      }
+
+      /* ---------- Chrome: brand and counter ---------- */
+
+      .chrome {
+        position: absolute;
+        left: 128px;
+        right: 128px;
+        bottom: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      .chrome-brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 24px;
+        transition: opacity 0.3s ease;
+      }
+
+      .chrome-brand .seal {
+        width: 34px;
+        height: 34px;
+      }
+
+      .stage[data-slide="1"] .chrome-brand,
+      .stage[data-slide="8"] .chrome-brand {
+        opacity: 0;
+      }
+
+      .counter {
+        padding: 4px 14px;
+        border-radius: 999px;
+        background: var(--paper);
+        font-size: 22px;
+        font-stretch: 78%;
+        letter-spacing: 0.04em;
+        color: var(--muted);
+      }
+
+      /* ---------- 1. Title ---------- */
+
+      .s1 .rosette {
+        width: 1180px;
+        height: 1180px;
+        right: -400px;
+        top: -50px;
+      }
+
+      .s1-brand {
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        font-size: 64px;
+      }
+
+      .s1-brand .seal {
+        width: 84px;
+        height: 84px;
+      }
+
+      .s1-title {
+        margin-top: 150px;
+        font-size: 120px;
+        max-width: 1100px;
+        position: relative;
+      }
+
+      .s1-sub {
+        margin-top: 48px;
+        font-size: 36px;
+        line-height: 1.4;
+        max-width: 30ch;
+        color: var(--muted);
+        position: relative;
+      }
+
+      .s1-foot {
+        position: absolute;
+        left: 128px;
+        bottom: 96px;
+        font-size: 32px;
+        font-weight: 650;
+        color: var(--seal);
+      }
+
+      /* ---------- 2. Problem ---------- */
+
+      .s2 .rosette {
+        width: 760px;
+        height: 760px;
+        right: -300px;
+        top: -330px;
+      }
+
+      .explorer {
+        margin-top: 72px;
+        background: var(--paper-shade);
+        border-radius: 10px;
+        padding: 18px 40px 14px;
+        position: relative;
+      }
+
+      .ex-row {
+        display: grid;
+        grid-template-columns: 330px 70px 330px 1fr 300px;
+        align-items: baseline;
+        padding: 20px 0;
+        font-size: 30px;
+      }
+
+      .ex-row + .ex-row {
+        border-top: 1px solid rgba(15, 42, 32, 0.12);
+      }
+
+      .ex-head {
+        font-size: 22px;
+        color: var(--muted);
+        padding: 8px 0 12px;
+      }
+
+      .ex-dim {
+        color: rgba(15, 42, 32, 0.38);
+      }
+
+      .ex-hit {
+        font-size: 40px;
+        font-weight: 600;
+        padding: 30px 0 34px;
+        position: relative;
+      }
+
+      .ex-addr {
+        font-stretch: 78%;
+        letter-spacing: 0.02em;
+      }
+
+      .ex-arrow {
+        color: var(--muted);
+      }
+
+      .ex-hit .ex-arrow {
+        color: var(--ink);
+      }
+
+      .ex-when {
+        text-align: right;
+      }
+
+      .redline {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 16px;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--red);
+        transform-origin: left center;
+      }
+
+      .s2-cap {
+        margin-top: 56px;
+        font-size: 44px;
+        font-stretch: 108%;
+        font-weight: 560;
+        line-height: 1.24;
+        letter-spacing: -0.01em;
+        max-width: 34ch;
+        text-wrap: pretty;
+      }
+
+      .s2-beat {
+        position: absolute;
+        left: 128px;
+        bottom: 132px;
+        font-size: 30px;
+        color: var(--muted);
+      }
+
+      /* ---------- 3. Insight ---------- */
+
+      .s3 .rosette {
+        width: 900px;
+        height: 900px;
+        left: -470px;
+        bottom: -520px;
+      }
+
+      .s3 .h2 {
+        font-size: 84px;
+        max-width: 1640px;
+      }
+
+      .s3-grid {
+        margin-top: 72px;
+        display: grid;
+        grid-template-columns: 1fr 600px;
+        gap: 120px;
+        align-items: start;
+      }
+
+      .terms {
+        list-style: none;
+      }
+
+      .terms li {
+        display: flex;
+        align-items: baseline;
+        gap: 20px;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--rule);
+        font-size: 42px;
+        font-stretch: 112%;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .terms li:first-child {
+        padding-top: 0;
+      }
+
+      .terms .where {
+        font-size: 24px;
+        font-weight: 450;
+        font-stretch: 100%;
+        letter-spacing: 0;
+        color: var(--muted);
+      }
+
+      .s3-line {
+        margin-top: 40px;
+        font-size: 36px;
+        line-height: 1.35;
+        max-width: 32ch;
+        text-wrap: pretty;
+      }
+
+      .s3-line span {
+        display: block;
+      }
+
+      .deduct-slip {
+        padding: 36px 40px 32px;
+        rotate: 1deg;
+        margin-top: 4px;
+      }
+
+      .slip-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 28px;
+        font-weight: 650;
+      }
+
+      .slip-kind {
+        font-size: 22px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+
+      .slip-lines {
+        margin-top: 30px;
+        font-size: 26px;
+      }
+
+      .slip-lines div {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+      }
+
+      .slip-lines dt {
+        color: var(--muted);
+      }
+
+      .slip-lines .deduct {
+        position: relative;
+        color: var(--seal);
+        font-weight: 650;
+      }
+
+      .slip-lines .deduct dt {
+        color: var(--seal);
+      }
+
+      .deduct .mark {
+        position: absolute;
+        inset: 2px -14px;
+        border-radius: 6px;
+        background: rgba(42, 60, 176, 0.1);
+        box-shadow: inset 0 0 0 2px rgba(42, 60, 176, 0.5);
+        transform-origin: left center;
+        z-index: -1;
+      }
+
+      .slip-lines .deduct {
+        isolation: isolate;
+      }
+
+      .net {
+        margin-top: 20px;
+        padding-top: 22px;
+      }
+
+      .net-label {
+        font-size: 22px;
+        color: var(--muted);
+      }
+
+      .net-amount {
+        font-size: 64px;
+      }
+
+      /* ---------- 4. Product ---------- */
+
+      .layers {
+        margin-top: 56px;
+        position: relative;
+      }
+
+      .layer {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        width: 1540px;
+        min-height: 214px;
+        position: relative;
+      }
+
+      .layer + .layer {
+        margin-top: 28px;
+      }
+
+      .layer:nth-child(2) {
+        margin-left: 62px;
+      }
+
+      .layer:nth-child(3) {
+        margin-left: 124px;
+      }
+
+      .layer-stub {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-right: 3px dashed rgba(15, 42, 32, 0.22);
+        font-size: 96px;
+        font-stretch: 125%;
+        font-weight: 800;
+        color: var(--seal);
+      }
+
+      .layer-body {
+        padding: 36px 48px 36px 52px;
+      }
+
+      .layer-title {
+        font-size: 50px;
+      }
+
+      .layer-text {
+        margin-top: 14px;
+        font-size: 30px;
+        line-height: 1.38;
+        color: var(--muted);
+        max-width: 64ch;
+        text-wrap: pretty;
+      }
+
+      .layer-text span {
+        display: block;
+      }
+
+      /* ---------- 5. Two views ---------- */
+
+      .s5-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 112px;
+        margin-top: 64px;
+      }
+
+      .s5-label {
+        font-size: 48px;
+        white-space: nowrap;
+      }
+
+      .ledger {
+        margin-top: 44px;
+        background: var(--paper-shade);
+        border-radius: 10px;
+        padding: 12px 36px;
+        list-style: none;
+      }
+
+      .ledger li {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        align-items: baseline;
+        padding: 26px 0;
+        font-size: 34px;
+      }
+
+      .ledger li + li {
+        border-top: 1px solid rgba(15, 42, 32, 0.12);
+      }
+
+      .ledger .to {
+        color: var(--muted);
+        font-size: 26px;
+      }
+
+      .ledger .to b {
+        font-weight: 450;
+        font-stretch: 78%;
+        letter-spacing: 0.02em;
+        margin-left: 10px;
+        color: rgba(15, 42, 32, 0.45);
+      }
+
+      .s5-q {
+        margin-top: 36px;
+        font-size: 34px;
+        font-weight: 600;
+        line-height: 1.3;
+      }
+
+      .paid-wrap {
+        margin-top: 44px;
+        position: relative;
+      }
+
+      .paid {
+        padding: 48px 52px 40px;
+      }
+
+      .paid-hello {
+        font-size: 30px;
+      }
+
+      .paid-amount {
+        font-size: 124px;
+        margin-top: 8px;
+      }
+
+      .paid-from {
+        margin-top: 14px;
+        font-size: 32px;
+        color: var(--muted);
+      }
+
+      .paid-stub {
+        margin-top: 40px;
+        padding-top: 26px;
+        font-size: 24px;
+        color: var(--muted);
+      }
+
+      .paid-stamp {
+        position: absolute;
+        right: -28px;
+        bottom: -150px;
+        width: 480px;
+        padding: 22px 28px;
+      }
+
+      .stamp-title {
+        font-size: 38px;
+      }
+
+      .stamp-text {
+        margin-top: 8px;
+        font-size: 23px;
+        line-height: 1.3;
+      }
+
+      .stamp-note {
+        margin-top: 6px;
+        font-size: 19px;
+        opacity: 0.8;
+      }
+
+      /* ---------- 6. Built and live ---------- */
+
+      .s6 .rosette {
+        width: 820px;
+        height: 820px;
+        right: -380px;
+        bottom: -420px;
+      }
+
+      .s6-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+      }
+
+      #testers {
+        margin-top: 10px;
+        margin-right: 16px;
+        padding: 18px 34px 16px;
+        font-size: 46px;
+        white-space: nowrap;
+      }
+
+      .statement {
+        margin-top: 80px;
+        padding: 30px 48px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        column-gap: 80px;
+      }
+
+      .fact {
+        display: flex;
+        align-items: baseline;
+        gap: 18px;
+        padding: 32px 0;
+        border-bottom: 1px solid var(--rule);
+        font-size: 28px;
+        white-space: nowrap;
+      }
+
+      .fact:nth-last-child(-n + 2) {
+        border-bottom: 0;
+      }
+
+      .fact .leader {
+        flex: 1;
+        min-width: 24px;
+        border-bottom: 3px dotted rgba(15, 42, 32, 0.28);
+        transform: translateY(-6px);
+      }
+
+      .fact .v {
+        font-size: 33px;
+        font-stretch: 115%;
+        font-weight: 720;
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+      }
+
+      .fact .v.blue {
+        color: var(--seal);
+      }
+
+      /* ---------- 7. Business ---------- */
+
+      .s7 .rosette {
+        width: 700px;
+        height: 700px;
+        right: -330px;
+        top: -330px;
+      }
+
+      .s7-grid {
+        margin-top: 72px;
+        display: grid;
+        grid-template-columns: 760px 1fr;
+        gap: 112px;
+        align-items: start;
+      }
+
+      .col-label {
+        font-size: 28px;
+        color: var(--muted);
+      }
+
+      .revenue {
+        margin-top: 22px;
+        padding: 18px 44px;
+        list-style: none;
+      }
+
+      .revenue li {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        padding: 30px 0;
+        font-size: 38px;
+        font-stretch: 110%;
+        font-weight: 650;
+        letter-spacing: -0.01em;
+      }
+
+      .revenue li + li {
+        border-top: 3px dashed rgba(15, 42, 32, 0.2);
+      }
+
+      .revenue .dot {
+        flex: none;
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: var(--guilloche);
+      }
+
+      .path {
+        margin-top: 22px;
+        position: relative;
+        list-style: none;
+        padding-left: 76px;
+      }
+
+      .path li {
+        position: relative;
+      }
+
+      .path li + li {
+        margin-top: 92px;
+      }
+
+      .path .node {
+        position: absolute;
+        left: -76px;
+        top: 6px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        border: 4px solid var(--seal);
+        background: var(--paper);
+      }
+
+      .path li:first-child .node {
+        background: var(--seal);
+      }
+
+      .path .when {
+        font-size: 30px;
+        color: var(--seal);
+        font-weight: 650;
+      }
+
+      .path .what {
+        margin-top: 8px;
+        font-size: 44px;
+        line-height: 1.18;
+        max-width: 22ch;
+      }
+
+      .path .note {
+        margin-top: 12px;
+        font-size: 28px;
+        color: var(--muted);
+      }
+
+      .path-line {
+        position: absolute;
+        /* From the Start node down to the Then node. */
+        left: -58px;
+        top: 50px;
+        width: 4px;
+        height: calc(100% - 50px + 92px + 2px);
+        background-image: radial-gradient(circle, var(--seal) 2.4px, transparent 2.8px);
+        background-size: 4px 14px;
+        background-repeat: repeat-y;
+        transform-origin: top center;
+      }
+
+      /* ---------- 8. Team and close ---------- */
+
+      .s8 .rosette {
+        width: 1060px;
+        height: 1060px;
+        right: -230px;
+        top: 10px;
+      }
+
+      .founder-name {
+        font-size: 54px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+      }
+
+      #founder {
+        margin-top: 14px;
+        font-size: 32px;
+        color: var(--muted);
+      }
+
+      .solo {
+        margin-top: 10px;
+        font-size: 32px;
+      }
+
+      .s8 .perforation {
+        margin-top: 64px;
+        width: 980px;
+      }
+
+      .s8-close {
+        margin-top: 72px;
+        font-size: 116px;
+        max-width: 1180px;
+        position: relative;
+      }
+
+      .s8-url {
+        margin-top: 48px;
+        font-size: 40px;
+        font-weight: 650;
+        color: var(--seal);
+      }
+
+      /* ---------- Entrance: one moment per slide, only while the slide is active ---------- */
+
+      @media (prefers-reduced-motion: no-preference) {
+        .is-active .rosette.draw .ln {
+          stroke-dasharray: 1;
+          animation: draw 2.2s cubic-bezier(0.65, 0, 0.35, 1) backwards;
+          animation-delay: calc(var(--i) * 25ms);
+        }
+
+        .is-active .redline {
+          animation: underline 0.9s cubic-bezier(0.7, 0, 0.2, 1) 0.45s backwards;
+        }
+
+        .is-active .deduct .mark {
+          animation: underline 0.8s cubic-bezier(0.7, 0, 0.2, 1) 0.5s backwards;
+        }
+
+        .is-active .layer {
+          animation: print 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) backwards;
+        }
+
+        .is-active .layer:nth-child(1) {
+          animation-delay: 0.15s;
+        }
+
+        .is-active .layer:nth-child(2) {
+          animation-delay: 0.35s;
+        }
+
+        .is-active .layer:nth-child(3) {
+          animation-delay: 0.55s;
+        }
+
+        .is-active .press {
+          animation: press 0.55s cubic-bezier(0.3, 0.6, 0.3, 1.25) 0.5s backwards;
+        }
+
+        .is-active .path-line {
+          animation: grow 1s cubic-bezier(0.7, 0, 0.2, 1) 0.4s backwards;
+        }
+
+        .is-active .path li:last-child {
+          animation: appear 0.5s ease 1.25s backwards;
+        }
+      }
+
+      @keyframes draw {
+        from {
+          stroke-dashoffset: 1;
+        }
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      @keyframes underline {
+        from {
+          transform: scaleX(0);
+        }
+        to {
+          transform: scaleX(1);
+        }
+      }
+
+      @keyframes grow {
+        from {
+          transform: scaleY(0);
+        }
+        to {
+          transform: scaleY(1);
+        }
+      }
+
+      @keyframes appear {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+
+      @keyframes print {
+        from {
+          opacity: 0;
+          transform: translateY(-28px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      @keyframes press {
+        0% {
+          opacity: 0;
+          scale: 1.5;
+        }
+        70% {
+          opacity: 1;
+          scale: 0.96;
+        }
+        100% {
+          opacity: 1;
+          scale: 1;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .slide,
+        .slide.is-active,
+        .chrome-brand {
+          transition: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="stage" id="stage" data-slide="1" aria-live="polite">
+      <!-- 1. Title -->
+      <section class="slide s1" aria-label="Sigilo">
+        <svg class="rosette draw" data-rosette="seal" viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <div class="s1-brand">
+          <svg class="seal" data-seal viewBox="0 0 32 32" aria-hidden="true"></svg>
+          <span class="display">Sigilo</span>
+        </div>
+        <h1 class="display s1-title">The original proof of work.</h1>
+        <p class="s1-sub">Private payroll, Income Passports and payroll-deducted credit on Monad.</p>
+        <p class="s1-foot">sigilo.work</p>
+      </section>
+
+      <!-- 2. Problem -->
+      <section class="slide s2" aria-label="Problem">
+        <svg class="rosette faint" data-rosette="seal" viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <h2 class="display h2">Stablecoin payroll is public payroll.</h2>
+        <div class="explorer" role="img" aria-label="A public record: Acme Labs pays 2,400.00 USDC to account 0x7f3…a1c every 30 days.">
+          <div class="ex-row ex-head">
+            <span>From</span><span></span><span>To</span><span>Amount</span
+            ><span class="ex-when">Repeats</span>
+          </div>
+          <div class="ex-row ex-dim">
+            <span>Northwind Co.</span><span class="ex-arrow">→</span
+            ><span class="ex-addr">0x41d…9be</span><span>1,150.00 USDC</span
+            ><span class="ex-when">every 15 days</span>
+          </div>
+          <div class="ex-row ex-hit">
+            <span>Acme Labs</span><span class="ex-arrow">→</span
+            ><span class="ex-addr">0x7f3…a1c</span><span>2,400.00 USDC</span
+            ><span class="ex-when">every 30 days</span>
+            <i class="redline" aria-hidden="true"></i>
+          </div>
+          <div class="ex-row ex-dim">
+            <span>Acme Labs</span><span class="ex-arrow">→</span
+            ><span class="ex-addr">0xc08…5f2</span><span>3,100.00 USDC</span
+            ><span class="ex-when">every 30 days</span>
+          </div>
+        </div>
+        <p class="s2-cap">
+          Anyone who learns María’s account knows what she earns, who pays her, and when.
+        </p>
+        <p class="s2-beat">And to rent an apartment, she still hands over payslips and bank statements.</p>
+      </section>
+
+      <!-- 3. Insight -->
+      <section class="slide s3" aria-label="Insight">
+        <svg class="rosette faint" data-rosette="seal" viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <h2 class="display h2">The cheapest credit in Latin America is deducted from payroll.</h2>
+        <div class="s3-grid">
+          <div>
+            <ul class="terms">
+              <li>Crédito consignado <span class="where">Brazil</span></li>
+              <li>Deducción de planilla <span class="where">Costa Rica</span></li>
+              <li>Préstamo de nómina <span class="where">Mexico</span></li>
+            </ul>
+            <p class="s3-line">
+              <span>Whoever runs payroll can offer it.</span>
+              <span>We built a private payroll rail.</span>
+            </p>
+          </div>
+          <div class="slip deduct-slip" role="img" aria-label="Payslip: gross pay $2,400.00, advance repayment minus $300.00, net pay $2,100.00.">
+            <div class="slip-top"><span>Acme Labs</span><span>November 2026</span></div>
+            <p class="slip-kind">Payslip</p>
+            <dl class="slip-lines">
+              <div><dt>Gross pay</dt><dd>$2,400.00</dd></div>
+              <div class="deduct">
+                <i class="mark" aria-hidden="true"></i><dt>Advance repayment</dt><dd>−$300.00</dd>
+              </div>
+            </dl>
+            <div class="net tear">
+              <p class="net-label">Net pay</p>
+              <p class="heading net-amount">$2,100.00</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Product -->
+      <section class="slide s4" aria-label="Product">
+        <h2 class="display h2">Three layers, one payroll.</h2>
+        <div class="layers">
+          <article class="slip layer">
+            <div class="layer-stub" aria-hidden="true">1</div>
+            <div class="layer-body">
+              <h3 class="heading layer-title">Private payroll</h3>
+              <p class="layer-text">
+                <span>Salaries split into same-size pieces, paid to fresh accounts.</span>
+                <span>Names and salaries encrypted on the device.</span>
+              </p>
+            </div>
+          </article>
+          <article class="slip layer">
+            <div class="layer-stub" aria-hidden="true">2</div>
+            <div class="layer-body">
+              <h3 class="heading layer-title">Income Passport</h3>
+              <p class="layer-text">
+                <span>“At least $1,500 a month for 3 months”, proven in seconds on her phone.</span>
+                <span>No employer, no salary, no payslips.</span>
+              </p>
+            </div>
+          </article>
+          <article class="slip layer">
+            <div class="layer-stub" aria-hidden="true">3</div>
+            <div class="layer-body">
+              <h3 class="heading layer-title">Paid checks and advances</h3>
+              <p class="layer-text">
+                <span>Lenders pay $0.10 per check.</span>
+                <span>Advances are repaid straight from the next payroll.</span>
+              </p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- 5. What the internet sees vs what María sees -->
+      <section class="slide s5" aria-label="Two views of the same payroll">
+        <div class="s5-grid">
+          <div>
+            <h2 class="heading s5-label">What the internet sees</h2>
+            <ul class="ledger">
+              <li><span>$1,000.00</span><span class="to">to a new account<b>0x3b1…e04</b></span></li>
+              <li><span>$1,000.00</span><span class="to">to a new account<b>0x9ac…71d</b></span></li>
+              <li><span>$500.00</span><span class="to">to a new account<b>0x52f…c38</b></span></li>
+              <li><span>$1,000.00</span><span class="to">to a new account<b>0xe17…0a6</b></span></li>
+              <li><span>$500.00</span><span class="to">to a new account<b>0x6d4…b92</b></span></li>
+            </ul>
+            <p class="s5-q">Which of these are María’s? No way to tell.</p>
+          </div>
+          <div>
+            <h2 class="heading s5-label">What María sees</h2>
+            <div class="paid-wrap">
+              <div class="slip paid">
+                <p class="paid-hello">You got paid</p>
+                <p class="display paid-amount">$2,400.00</p>
+                <p class="paid-from">Acme Labs</p>
+                <p class="paid-stub tear">October 2026</p>
+              </div>
+              <div class="stamp press paid-stamp">
+                <p class="heading stamp-title">Income verified</p>
+                <p class="stamp-text">At least $1,500 a month for 3 months, from a verified employer.</p>
+                <p class="stamp-note">Salary and employer not shared.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. Built and live -->
+      <section class="slide s6" aria-label="Built and live">
+        <svg class="rosette faint" data-rosette="seal" viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <div class="s6-head">
+          <h2 class="display h2">Built and live.</h2>
+          <!-- EDIT: replace [N] with the tester count before recording. -->
+          <p class="stamp press heading" id="testers">[N] testers</p>
+        </div>
+        <div class="slip statement">
+          <p class="fact"><span>Live on Monad testnet</span><i class="leader"></i><span class="v blue">sigilo.work</span></p>
+          <p class="fact"><span>Income checks paid with MPP</span><i class="leader"></i><span class="v">$0.10</span></p>
+          <p class="fact"><span>Contracts, verified</span><i class="leader"></i><span class="v">6</span></p>
+          <p class="fact"><span>Passkeys only (Mera)</span><i class="leader"></i><span class="v">No app, no password</span></p>
+          <p class="fact"><span>Income Passport sealed on the phone</span><i class="leader"></i><span class="v">~6 s</span></p>
+          <p class="fact"><span>Payroll records re-checked by</span><i class="leader"></i><span class="v">Chainlink CRE</span></p>
+          <p class="fact"><span>Send home delivered (Agora)</span><i class="leader"></i><span class="v">0.7 s</span></p>
+          <p class="fact"><span>Privacy measured live with</span><i class="leader"></i><span class="v">Envio</span></p>
+        </div>
+      </section>
+
+      <!-- 7. Business and go-to-market -->
+      <section class="slide s7" aria-label="Business and go-to-market">
+        <svg class="rosette faint" data-rosette="seal" viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <h2 class="display h2">Paid on every payroll, check and advance.</h2>
+        <div class="s7-grid">
+          <div>
+            <h3 class="col-label">Revenue</h3>
+            <ul class="slip revenue">
+              <li><i class="dot" aria-hidden="true"></i>Per worker, per month</li>
+              <li><i class="dot" aria-hidden="true"></i>$0.10 per income check</li>
+              <li><i class="dot" aria-hidden="true"></i>Share of advance origination</li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="col-label">Go-to-market</h3>
+            <ol class="path">
+              <li>
+                <i class="path-line" aria-hidden="true"></i>
+                <i class="node" aria-hidden="true"></i>
+                <p class="when">Start</p>
+                <p class="heading what">LatAm teams already paid in stablecoins</p>
+                <p class="note">Costa Rica first</p>
+              </li>
+              <li>
+                <i class="node" aria-hidden="true"></i>
+                <p class="when">Then</p>
+                <p class="heading what">Any business</p>
+                <p class="note">With bank on and off-ramps via partners like Bridge</p>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <!-- 8. Team and close -->
+      <section class="slide s8" aria-label="Team">
+        <svg class="rosette draw" data-rosette="seal" viewBox="0 0 400 400" aria-hidden="true"></svg>
+        <p class="heading founder-name">Daniel Garbanzo (bitfalt)</p>
+        <!-- EDIT: replace with one line about you. -->
+        <p id="founder">[one line about you]</p>
+        <p class="solo">Built solo in four days for Monad Metropolis.</p>
+        <div class="perforation" aria-hidden="true"></div>
+        <h2 class="display s8-close">Get paid in private. Prove it in seconds.</h2>
+        <p class="s8-url">sigilo.work</p>
+      </section>
+
+      <div class="chrome" aria-hidden="true">
+        <div class="chrome-brand">
+          <svg class="seal" data-seal viewBox="0 0 32 32"></svg>
+          <span class="heading">Sigilo</span>
+        </div>
+        <p class="counter" id="counter">1 / 8</p>
+      </div>
+    </main>
+
+    <script>
+      (() => {
+        const TAU = Math.PI * 2;
+        const NS = "http://www.w3.org/2000/svg";
+
+        // ---------- Art: the Sigilo seal and the guilloche rosette ----------
+
+        // Epitrochoid (R, r, d): with R = 7, r = 1 the curve closes in one turn as an 8-lobed seal.
+        function epitrochoid(R, r, d, scale, c, samples, rot) {
+          let p = "";
+          for (let i = 0; i <= samples; i++) {
+            const t = (i / samples) * TAU;
+            const x = (R + r) * Math.cos(t) - d * Math.cos(((R + r) / r) * t);
+            const y = (R + r) * Math.sin(t) - d * Math.sin(((R + r) / r) * t);
+            const xr = x * Math.cos(rot) - y * Math.sin(rot);
+            const yr = x * Math.sin(rot) + y * Math.cos(rot);
+            p += (i ? "L" : "M") + (c + xr * scale).toFixed(2) + " " + (c + yr * scale).toFixed(2);
+          }
+          return p + "Z";
+        }
+
+        function polar(rf, samples, c) {
+          let p = "";
+          for (let i = 0; i <= samples; i++) {
+            const t = (i / samples) * TAU;
+            const r = rf(t);
+            p += (i ? "L" : "M") + (c + r * Math.cos(t)).toFixed(1) + " " + (c + r * Math.sin(t)).toFixed(1);
+          }
+          return p + "Z";
+        }
+
+        function el(name, attrs) {
+          const n = document.createElementNS(NS, name);
+          for (const k in attrs) n.setAttribute(k, attrs[k]);
+          return n;
+        }
+
+        // Small mark: exactly the app's SealMark (32-unit box, circle r = 14.5, epitrochoid 7/1/3.2).
+        const sealPath = epitrochoid(7, 1, 3.2, 1, 16, 160, 0);
+        document.querySelectorAll("[data-seal]").forEach((svg) => {
+          svg.append(
+            el("circle", { cx: 16, cy: 16, r: 14.5, fill: "none", stroke: "currentColor", "stroke-width": 1.5 }),
+            el("path", { d: sealPath, fill: "none", stroke: "currentColor", "stroke-width": 1.1 }),
+          );
+        });
+
+        // Large rosette: the same seal drawn as fine-line guilloche. Outer double ring, a woven band of
+        // phase-shifted sine rings, the 8-lobed epitrochoid repeated at slight turns, and an inner band.
+        const C = 200;
+        const lines = [];
+        lines.push(["r-ring", polar(() => 192, 360, C)]);
+        lines.push(["r-ring", polar(() => 186, 360, C)]);
+        for (let j = 0; j < 16; j++) {
+          const ph = (j / 16) * TAU;
+          lines.push(["r-band", polar((t) => 163 + 11 * Math.sin(16 * t + ph) + 4 * Math.sin(48 * t - ph), 720, C)]);
+        }
+        for (let k = 0; k < 12; k++) {
+          lines.push(["r-loop", epitrochoid(7, 1, 3.2, 11.2, C, 900, (k * TAU) / 8 / 12)]);
+        }
+        for (let j = 0; j < 9; j++) {
+          const ph = (j / 9) * TAU;
+          lines.push(["r-inner", polar((t) => 44 + 8 * Math.sin(8 * t + ph), 300, C)]);
+        }
+
+        document.querySelectorAll("[data-rosette]").forEach((svg) => {
+          const g = el("g", {});
+          lines.forEach(([cls, d], i) => {
+            const p = el("path", { d, class: "ln " + cls, pathLength: 1 });
+            p.style.setProperty("--i", i);
+            g.append(p);
+          });
+          svg.append(g);
+        });
+
+        // ---------- Deck ----------
+
+        const stage = document.getElementById("stage");
+        const slides = Array.from(stage.querySelectorAll(".slide"));
+        const counter = document.getElementById("counter");
+        const total = slides.length;
+        let current = 0;
+
+        function fit() {
+          const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+          stage.style.setProperty("--s", s);
+        }
+
+        function go(n, updateHash) {
+          const next = Math.max(0, Math.min(total - 1, n));
+          if (next !== current || !slides[next].classList.contains("is-active")) {
+            slides[current].classList.remove("is-active");
+            // Force a reflow so a revisited slide replays its entrance.
+            void slides[next].offsetWidth;
+            slides[next].classList.add("is-active");
+            current = next;
+          }
+          stage.dataset.slide = String(current + 1);
+          counter.textContent = current + 1 + " / " + total;
+          if (updateHash !== false) {
+            try {
+              history.replaceState(null, "", "#" + (current + 1));
+            } catch (_) {
+              /* file:// or sandboxed: the hash is a convenience only */
+            }
+          }
+        }
+
+        function fromHash() {
+          const n = parseInt(location.hash.replace("#", ""), 10);
+          return Number.isFinite(n) ? n - 1 : 0;
+        }
+
+        function toggleFullscreen() {
+          if (document.fullscreenElement) document.exitFullscreen();
+          else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen();
+        }
+
+        document.addEventListener("keydown", (e) => {
+          if (e.metaKey || e.ctrlKey || e.altKey) return;
+          switch (e.key) {
+            case "ArrowRight":
+            case "PageDown":
+            case " ":
+              e.preventDefault();
+              go(current + 1);
+              break;
+            case "ArrowLeft":
+            case "PageUp":
+              e.preventDefault();
+              go(current - 1);
+              break;
+            case "Home":
+              e.preventDefault();
+              go(0);
+              break;
+            case "End":
+              e.preventDefault();
+              go(total - 1);
+              break;
+            case "f":
+            case "F":
+              toggleFullscreen();
+              break;
+          }
+        });
+
+        document.addEventListener("click", (e) => {
+          if (e.button !== 0) return;
+          go(e.clientX < window.innerWidth / 2 ? current - 1 : current + 1);
+        });
+
+        window.addEventListener("hashchange", () => go(fromHash()));
+        window.addEventListener("resize", fit);
+
+        fit();
+        go(fromHash(), location.hash !== "");
+      })();
+    </script>
+  </body>
+</html>
