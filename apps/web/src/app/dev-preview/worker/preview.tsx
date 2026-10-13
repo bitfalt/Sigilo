@@ -100,6 +100,7 @@ export function WorkerPreview() {
           onCreate={noop}
           onSignInKnown={noop}
           onSignInAny={noop}
+          onUseAnother={noop}
         />
       );
     case "invite":
@@ -115,6 +116,7 @@ export function WorkerPreview() {
           onJoinOpen={noop}
           onJoinKnown={noop}
           onJoinAny={noop}
+          onUseAnother={noop}
           onCreate={noop}
         />
       );

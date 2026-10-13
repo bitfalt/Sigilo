@@ -24,6 +24,8 @@ export function WorkerHome() {
 /** Sign in or create an account; shown wherever an unlocked worker account is needed. */
 export function WorkerUnlock() {
   const { known, create, signIn } = useWorkerAccess();
+  // "Use a different account": show the new-account screen even though one is remembered.
+  const [another, setAnother] = useState(false);
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +44,7 @@ export function WorkerUnlock() {
 
   return (
     <UnlockView
-      known={known}
+      known={another ? null : known}
       name={name}
       onNameChange={setName}
       busy={busy}
@@ -55,6 +57,10 @@ export function WorkerUnlock() {
       }
       onSignInKnown={() => run(() => signIn(true))}
       onSignInAny={() => run(() => signIn(false))}
+      onUseAnother={() => {
+        setError(null);
+        setAnother(true);
+      }}
     />
   );
 }

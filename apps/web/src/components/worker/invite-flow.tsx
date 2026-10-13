@@ -10,7 +10,7 @@ import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
-import { useKeys } from "@/components/sigilo-provider";
+import { useKeys, useSigilo } from "@/components/sigilo-provider";
 import { useWorkerAccess } from "@/components/worker/use-worker-access";
 import {
   InviteJoiningView,
@@ -33,6 +33,9 @@ export function InviteFlow({ code }: { code: string }) {
   const info = useQuery(api.employees.inviteInfo, { inviteCodeHash });
   const keys = useKeys("worker");
   const { known, create, signIn } = useWorkerAccess();
+  const { lock } = useSigilo();
+  // "Use a different account": offer a new account even though one is open or remembered.
+  const [another, setAnother] = useState(false);
   const { isAuthenticated } = useConvexAuth();
   const register = useMutation(api.accounts.register);
   const accept = useMutation(api.employees.acceptInvite);
@@ -135,13 +138,18 @@ export function InviteFlow({ code }: { code: string }) {
   return (
     <InviteWelcomeView
       employerName={info.employerName}
-      access={keys ? "open" : known ? "known" : "new"}
+      access={keys ? "open" : known && !another ? "known" : "new"}
       name={name}
       onNameChange={setName}
       error={error}
       onJoinOpen={() => join("open")}
       onJoinKnown={() => join("known")}
       onJoinAny={() => join("any")}
+      onUseAnother={() => {
+        setError(null);
+        setAnother(true);
+        if (keys) lock();
+      }}
       onCreate={() => join("create")}
     />
   );

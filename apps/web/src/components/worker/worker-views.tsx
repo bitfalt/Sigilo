@@ -83,6 +83,8 @@ export interface UnlockViewProps {
   onCreate(): void;
   onSignInKnown(): void;
   onSignInAny(): void;
+  /** Leave the remembered account: create a new one or sign in with another passkey. */
+  onUseAnother(): void;
 }
 
 export function UnlockView(props: UnlockViewProps) {
@@ -119,7 +121,7 @@ export function UnlockView(props: UnlockViewProps) {
                 </>
               )}
             </Button>
-            <Button variant="ghost" onClick={onSignInAny} disabled={busy} className={QUIET}>
+            <Button variant="ghost" onClick={props.onUseAnother} disabled={busy} className={QUIET}>
               Use a different account
             </Button>
             {error && <ErrorNote>{error}</ErrorNote>}
@@ -275,6 +277,8 @@ export interface InviteWelcomeViewProps {
   onJoinOpen(): void;
   onJoinKnown(): void;
   onJoinAny(): void;
+  /** Join with another account than the open or remembered one. */
+  onUseAnother(): void;
   onCreate(): void;
 }
 
@@ -295,16 +299,21 @@ export function InviteWelcomeView(props: InviteWelcomeViewProps) {
 
         <div className={`${ACTIONS} lg:pt-8`}>
           {access === "open" ? (
-            <Button size="lg" onClick={props.onJoinOpen} className={PRIMARY}>
-              Join {employerName}
-            </Button>
+            <div className="flex flex-col items-start gap-2">
+              <Button size="lg" onClick={props.onJoinOpen} className={PRIMARY}>
+                Join {employerName}
+              </Button>
+              <Button variant="ghost" onClick={props.onUseAnother} className={`${QUIET} -ml-4`}>
+                Use a different account
+              </Button>
+            </div>
           ) : access === "known" ? (
             <div className="flex flex-col items-start gap-2">
               <Button size="lg" onClick={props.onJoinKnown} className={PRIMARY}>
                 <KeyRound aria-hidden="true" />
                 Sign in with passkey to join
               </Button>
-              <Button variant="ghost" onClick={props.onJoinAny} className={`${QUIET} -ml-4`}>
+              <Button variant="ghost" onClick={props.onUseAnother} className={`${QUIET} -ml-4`}>
                 Use a different account
               </Button>
             </div>

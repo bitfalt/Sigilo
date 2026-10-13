@@ -22,6 +22,7 @@
     "e2e:settings": "tsx --env-file=.env.local scripts/e2e-settings.mts",
     "smoke:collect": "tsx --env-file=.env.local scripts/smoke-collect.mts",
     "e2e:passkey": "node scripts/e2e-passkey.mjs",
+    "e2e:accounts": "tsx --env-file=.env.local scripts/e2e-accounts.mts",
     "og:render": "node scripts/render-og.mjs"
   },
   "dependencies": {
