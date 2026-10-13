@@ -21,7 +21,7 @@ import { action, env, internalAction, internalMutation } from "./_generated/serv
 // Monad reserve rules: the faucet holds < 10 MON, so it may only send MON when it sent nothing in
 // the last 3 blocks. MON goes first, then AUSD, ~1.5 s apart, and every receipt is checked.
 
-const FUND_AUSD = 3_000_000_000n; // $3,000
+const FUND_AUSD = 10_000_000_000n; // $10,000
 const FUND_MON = parseEther("0.25");
 const COOLDOWN_MS = 3 * 60 * 1000;
 const SPACING_MS = 1_500;

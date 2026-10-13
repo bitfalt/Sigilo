@@ -106,9 +106,16 @@ export async function verifiedEmployer(name: string, ausd: bigint) {
   const client = await signIn(treasury);
   const employerId = fieldToHex(randomField());
   const doc = await client.mutation(api.employers.register, { name, employerId });
-  execFileSync("npx", ["convex", "run", "employers:verify", JSON.stringify({ employer: doc })], {
-    stdio: ["ignore", "ignore", "ignore"],
-  });
+  if (process.env.AUTO_VERIFY === "1") {
+    // The deployment verifies new companies itself (AUTO_VERIFY_EMPLOYERS); wait for it.
+    for (let i = 0; i < 40 && !(await client.query(api.employers.mine, {}))?.verified; i++) {
+      await sleep(1_500);
+    }
+  } else {
+    execFileSync("npx", ["convex", "run", "employers:verify", JSON.stringify({ employer: doc })], {
+      stdio: ["ignore", "ignore", "ignore"],
+    });
+  }
 
   // ausd = 0: an employer that never pays (no funding, no fees spent).
   if (ausd > 0n) {
