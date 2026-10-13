@@ -50,16 +50,16 @@ Upload each video to YouTube as **Unlisted** and paste the links into the form.
 
 ## 2. Pitch (≤ 2:00), with the deck at sigilo.work/pitch
 
-Use → to advance. One slide per paragraph. Fill in your line on slide 8 and the tester number on slide 6.
+Use → to advance. One slide per paragraph. 
 
 1. **(Title)** "Hi, I'm Daniel, and this is Sigilo, the original proof of work."
 2. **(Problem)** "Paying remote teams in stablecoins is fast and cheap. But it turns payroll into a public record. Anyone who learns María's account sees what she earns, who pays her and when, and in Latin America that makes you a target. Then she tries to rent an apartment, and they ask for her payslips and bank statements anyway."
 3. **(Insight)** "Here's what we noticed. The cheapest consumer credit in Latin America is deducted straight from payroll. Crédito consignado in Brazil, deducción de planilla here in Costa Rica. Whoever runs payroll can offer it. So we built a private payroll rail."
 4. **(Product)** "Three layers. Private payroll: salaries split into same-size pieces, paid to fresh accounts, with names and salaries encrypted on the device. An Income Passport: María proves she earns at least fifteen hundred a month without showing her salary or her employer. And revenue: lenders pay ten cents per check, and advances are repaid straight from the next payroll."
 5. **(What the internet sees)** "On-chain you see that a company paid. You can't see who got what."
-6. **(Built)** "It's live today on Monad testnet. Passkeys from Mera instead of wallets, Noir proofs on the phone, Agora for sending money home, MPP for paid checks, Chainlink re-checking our payroll records, and Envio measuring how private we really are. [N] people are testing it."
+6. **(Built)** "It's live today on Monad testnet. Passkeys from Mera instead of wallets, Noir proofs on the phone, Agora for sending money home, MPP for paid checks, Chainlink re-checking our payroll records, and Envio measuring how private we really are. Four people are testing it right now, all family, which is honestly the toughest crowd."
 7. **(Business)** "We charge employers per worker, lenders per check, and take a share of advance origination. We start with LatAm teams already paid in stablecoins, Costa Rica first. Then, with a banking partner like Bridge, any business in the region, with nobody touching a stablecoin."
-8. **(Team)** "I'm Daniel, [one line about you]. I built Sigilo solo in four days. Get paid in private, prove it in seconds. Thank you."
+8. **(Team)** "I'm Daniel, a builder and engineer learning zero-knowledge by shipping it. I built Sigilo solo in four days. Get paid in private, prove it in seconds. Thank you."
 
 Record yourself on camera in the corner (QuickTime webcam, or Loom), with the deck full screen (press **f**).
 
