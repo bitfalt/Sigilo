@@ -17,8 +17,8 @@ Upload each video to YouTube as **Unlisted** and paste the links into the form.
 
 **Data**
 1. Mac → sigilo.work/employer → **Create company account**, name it **Acme Labs**. It's verified automatically.
-2. Tap **Add test funds** 3 times. It gives $10,000 each time, with a 3-minute wait between clicks.
-3. Add **María Solís** at $2,400, plus 2–3 testers or friends at any salary. Copy each invite link and send it to them.
+2. Tap **Add test funds** twice. It gives $6,000 each time, with a 3-minute wait between clicks.
+3. Add **María Solís** at $2,400, plus 2 testers or friends at small salaries (about $300 each), so the testnet faucet covers four months. Copy each invite link and send it to them.
 4. iPhone → open María's invite → **Create my account** → **Activate Income Passport**.
 5. Once everyone has joined, run payroll for **July** and **August** only. Save **September** for the camera.
 6. Second browser → sigilo.work/app → create an account named **Mamá** → **Get money from family** → send the link to your iPhone (AirDrop or WhatsApp). Open it once on the iPhone so Mamá is saved as a contact.
