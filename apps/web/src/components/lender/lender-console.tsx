@@ -286,8 +286,12 @@ function CheckDetail({ id }: { id: string }) {
               ? `Paying $${VERIFY_PRICE_USD} and verifying…`
               : `Verify for $${VERIFY_PRICE_USD}`}
           </Button>
-          <p className="text-muted-foreground text-sm">
-            Paid per check in digital dollars, straight from your Fondo Quincena account.
+          <p className="text-muted-foreground text-sm text-pretty">
+            Your back office pays per check over MPP: Sigilo&apos;s API answers{" "}
+            <span className="font-semibold">402 Payment Required</span>, your server signs $
+            {VERIFY_PRICE_USD} in AUSD from {DEMO_LENDER.name}&apos;s account{" "}
+            <AccountLink address={DEMO_LENDER.address} /> and gets the signed result back. No
+            prompt, no checkout: it&apos;s a machine payment.
           </p>
           {error && <p className="text-destructive text-sm">{error}</p>}
         </div>
@@ -419,18 +423,29 @@ function VerifiedResult(props: {
           <SealMark className="size-6" />
           Income verified
         </span>
-        <span className="mt-1.5 text-sm">
-          Paid ${VERIFY_PRICE_USD} to Sigilo
-          {receipt && (
-            <>
-              {" "}
-              <a href={receipt} target="_blank" rel="noreferrer" className="underline">
-                View receipt
-              </a>
-            </>
-          )}
-        </span>
+        <span className="mt-1.5 text-sm">Paid ${VERIFY_PRICE_USD} to Sigilo over MPP</span>
       </div>
+
+      <dl className="bg-background/70 grid gap-x-6 gap-y-2 rounded-md p-4 text-sm sm:grid-cols-[auto_1fr]">
+        <dt className="text-muted-foreground">Paid</dt>
+        <dd className="font-semibold">${VERIFY_PRICE_USD} in AUSD</dd>
+        <dt className="text-muted-foreground">From</dt>
+        <dd>
+          {DEMO_LENDER.name}&apos;s account <AccountLink address={DEMO_LENDER.address} />
+        </dd>
+        <dt className="text-muted-foreground">To</dt>
+        <dd>Sigilo Verify API (POST /api/v1/verify, HTTP 402 then 200)</dd>
+        <dt className="text-muted-foreground">Payment</dt>
+        <dd className="break-all">
+          {receipt ? (
+            <a href={receipt} target="_blank" rel="noreferrer" className="underline">
+              {short(paymentReference!)} on Monad
+            </a>
+          ) : (
+            "Not recorded"
+          )}
+        </dd>
+      </dl>
 
       <div className="grid gap-6 sm:grid-cols-2">
         <div>
@@ -461,6 +476,21 @@ function VerifiedResult(props: {
         </p>
       </div>
     </div>
+  );
+}
+
+const short = (hex: string) => `${hex.slice(0, 6)}…${hex.slice(-4)}`;
+
+function AccountLink({ address }: { address: string }) {
+  return (
+    <a
+      href={`${EXPLORER_URL}/address/${address}`}
+      target="_blank"
+      rel="noreferrer"
+      className="underline tabular-nums"
+    >
+      {short(address)}
+    </a>
   );
 }
 
