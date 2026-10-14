@@ -85,6 +85,12 @@ export function LenderConsole() {
             Confirm an applicant&apos;s income in a minute, without asking for payslips. Powered by
             Sigilo Income Passports.
           </p>
+          <p className="border-foreground/15 text-muted-foreground mt-2 max-w-[62ch] rounded-lg border px-4 py-3 text-[0.9375rem] leading-relaxed">
+            <span className="text-foreground font-semibold">A demo lender.</span> {DEMO_LENDER.name}{" "}
+            is run by Sigilo with test money, so anyone can try this page. Real lenders will sign in
+            with their own passkey, fund their own pool, and pay for checks from their own account.
+            We&apos;re onboarding the first ones now.
+          </p>
         </header>
         <PortfolioPanel />
         <Perforation />
