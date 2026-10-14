@@ -80,7 +80,7 @@ function MemberRow({ member }: { member: TeamMember }) {
       <div className="flex items-center gap-3 px-5 py-4 sm:px-6">
         <Monogram name={member.name} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <p className="truncate font-semibold">{member.name}</p>
+          <p className="font-semibold break-words">{member.name}</p>
           <p className="text-[0.95rem] whitespace-nowrap">
             <span className="font-wide">{member.salary}</span>
             <span className="text-muted-foreground"> a month</span>

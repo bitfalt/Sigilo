@@ -86,7 +86,7 @@ function PayslipRow({ receipt }: { receipt: PayslipReceipt }) {
         </span>
         <span className="min-w-0">
           <span className="block font-medium">You got paid</span>
-          <span className="text-muted-foreground block truncate text-sm">
+          <span className="text-muted-foreground block text-sm break-words">
             {receipt.employer.name}
             <span className="sr-only">, {periodLabel(receipt.period)}</span>
           </span>
@@ -279,7 +279,7 @@ function ReceivedLedger({ transfers }: { transfers: TransferEntry[] }) {
                   {receipt.kind === "advance" ? "Advance from" : "Money from"}{" "}
                   {receipt.from || "family"}
                 </span>
-                <span className="text-muted-foreground block truncate text-sm">
+                <span className="text-muted-foreground block text-sm break-words">
                   {receipt.memo ?? "Arrived in your account"}
                   <span className="sr-only">, {when.toLocaleDateString("en-US")}</span>
                 </span>

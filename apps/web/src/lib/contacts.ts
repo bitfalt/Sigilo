@@ -30,6 +30,17 @@ export function saveContact(contact: Contact): Contact[] {
   return next;
 }
 
+/** Changes a saved person's name, keeping their place in the list. */
+export function renameContact(account: string, name: string): Contact[] {
+  const next = loadContacts().map((c) => (c.account === account ? { ...c, name } : c));
+  try {
+    localStorage.setItem(KEY, JSON.stringify(next));
+  } catch {
+    // Private mode: the new name lasts for this visit only.
+  }
+  return next;
+}
+
 /** The `to` and `name` of a Sigilo "send to" link, if `text` is one. */
 export function parseSendLink(text: string): Contact | null {
   try {

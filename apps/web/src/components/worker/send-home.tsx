@@ -23,7 +23,13 @@ import { WorkerUnlock } from "@/components/worker/worker-home";
 import { ErrorNote } from "@/components/worker/worker-views";
 import { quoteCtk } from "@/lib/chain";
 import { CONVEX_URL } from "@/lib/config";
-import { type Contact, loadContacts, parseSendLink, saveContact } from "@/lib/contacts";
+import {
+  type Contact,
+  loadContacts,
+  parseSendLink,
+  renameContact,
+  saveContact,
+} from "@/lib/contacts";
 import { recordSent } from "@/lib/sent-history";
 import { errorMessage } from "@/lib/errors";
 import type { WorkerKeys } from "@/lib/identity";
@@ -98,6 +104,7 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
       <PickRecipient
         contacts={contacts}
         onPick={setTo}
+        onRename={(account, name) => setContacts(renameContact(account, name))}
         onAdd={(c) => {
           const next = saveContact(c);
           setContacts(next);
@@ -122,13 +129,16 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
 function PickRecipient({
   contacts,
   onPick,
+  onRename,
   onAdd,
 }: {
   contacts: Contact[];
   onPick(c: Contact): void;
+  onRename(account: string, name: string): void;
   onAdd(c: Contact): void;
 }) {
   const [link, setLink] = useState("");
+  const [renaming, setRenaming] = useState<{ account: string; name: string } | null>(null);
   const parsed = parseSendLink(link);
 
   return (
@@ -144,14 +154,51 @@ function PickRecipient({
       {contacts.length > 0 && (
         <ul className="border-foreground/15 border-t">
           {contacts.map((c) => (
-            <li key={c.account} className="border-foreground/15 border-b">
-              <button
-                onClick={() => onPick(c)}
-                className="focus-visible:ring-ring/50 hover:bg-foreground/[0.03] flex min-h-16 w-full items-center gap-3 rounded-lg px-2 text-left outline-none focus-visible:ring-3"
-              >
-                <UserRound aria-hidden="true" className="text-muted-foreground size-5" />
-                <span className="font-medium">Send to {c.name || "family member"}</span>
-              </button>
+            <li key={c.account} className="border-foreground/15 flex items-center gap-2 border-b">
+              {renaming?.account === c.account ? (
+                <form
+                  className="flex min-h-16 flex-1 items-center gap-2 py-2"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const name = renaming.name.trim().slice(0, 40);
+                    if (name) onRename(c.account, name);
+                    setRenaming(null);
+                  }}
+                >
+                  <Input
+                    aria-label="Their name"
+                    autoFocus
+                    value={renaming.name}
+                    maxLength={40}
+                    onChange={(e) => setRenaming({ account: c.account, name: e.target.value })}
+                    className="h-11 flex-1"
+                  />
+                  <Button type="submit" className="h-11 rounded-full px-5">
+                    Save
+                  </Button>
+                </form>
+              ) : (
+                <>
+                  <button
+                    onClick={() => onPick(c)}
+                    className="focus-visible:ring-ring/50 hover:bg-foreground/[0.03] flex min-h-16 min-w-0 flex-1 items-center gap-3 rounded-lg px-2 text-left outline-none focus-visible:ring-3"
+                  >
+                    <UserRound
+                      aria-hidden="true"
+                      className="text-muted-foreground size-5 shrink-0"
+                    />
+                    <span className="font-medium break-words">
+                      Send to {c.name || "family member"}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setRenaming({ account: c.account, name: c.name })}
+                    className="text-muted-foreground focus-visible:ring-ring/50 shrink-0 rounded-sm px-2 py-3 text-sm underline underline-offset-4 outline-none focus-visible:ring-3"
+                  >
+                    Rename
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
