@@ -10,7 +10,7 @@ Upload each video to YouTube as **Unlisted** and paste the links into the form.
 
 **Devices**
 - **Mac**, Safari or Chrome with Apple Passwords (iCloud Keychain): employer and lender.
-- **iPhone**, Safari: María.
+- **iPhone**, Safari: Daniel.
 - **A second browser** for Mom: Chrome on the Mac with Google Password Manager, or a friend's phone.
 - To show the iPhone on the Mac: plug it in → QuickTime Player → File → New Movie Recording → click the ▾ next to the record button → choose your iPhone as camera. Record the Mac screen with ⌘⇧5 ("Record Entire Screen", microphone on).
 - Browser zoom at 110–125%. Hide the bookmarks bar. Turn on Do Not Disturb.
@@ -18,8 +18,8 @@ Upload each video to YouTube as **Unlisted** and paste the links into the form.
 **Data**
 1. Mac → sigilo.work/employer → **Create company account**, name it **Acme Labs**. It's verified automatically.
 2. Tap **Add test funds** twice. It gives $6,000 each time, with a 3-minute wait between clicks.
-3. Add **María Solís** at $2,400, plus 2 testers or friends at small salaries (about $300 each), so the testnet faucet covers four months. Copy each invite link and send it to them.
-4. iPhone → open María's invite → **Create my account** → **Activate Income Passport**.
+3. Add **yourself (Daniel)** at $2,000, plus 2 testers or friends at small salaries (about $300 each), so the testnet faucet covers four months. Copy each invite link and send it to them.
+4. iPhone → open Daniel's invite → **Create my account** → **Activate Income Passport**.
 5. Once everyone has joined, run payroll for **July** and **August** only. Save **September** for the camera.
 6. Second browser → sigilo.work/app → create an account named **Mamá** → **Get money from family** → send the link to your iPhone (AirDrop or WhatsApp). Open it once on the iPhone so Mamá is saved as a contact.
 7. Open sigilo.work/lender in a second Mac window.
@@ -34,14 +34,14 @@ Upload each video to YouTube as **Unlisted** and paste the links into the form.
 | 0:00 | _sigilo.work landing. Scroll slowly through the hero and "the split"._ | "If your company pays you in stablecoins, your salary is on a public ledger. Anyone who learns your account knows what you earn, who pays you, and when. Sigilo is payroll that doesn't do that." |
 | 0:15 | _Mac, /employer, Acme Labs. Point at the team list._ | "This is Acme Labs. Names and salaries are encrypted right here in the browser. Our server only ever sees ciphertext." |
 | 0:25 | _Pick September → **Run payroll**. Let the steps finish until the "Payroll sent" stamp._ | "One click runs payroll. Every salary is split into standard-size pieces and each piece goes to a brand-new account, all shuffled into a single payment on Monad." |
-| 0:45 | _Click **What the internet sees** on that run._ | "This is all the public can see: a company paid some identical-looking pieces to new accounts. Which ones are María's? There's no way to tell." |
-| 0:58 | _iPhone: María's app. Balance envelope, then open the September payslip._ | "María just sees one balance and her payslip, decrypted on her phone. No seed phrase, no gas. Her passkey is her account." |
-| 1:10 | _Mac lender: **New income check**, $1,500 → **Create**. QR on screen._ | "Now she wants a loan. Fondo Quincena asks: does she earn at least fifteen hundred a month?" |
-| 1:18 | _iPhone: scan the QR. Show "They will see / They won't see". **Share my Income Passport** → Face ID → "Sealing your Income Passport" → "Sent to Fondo Quincena"._ | "She answers with her Income Passport. Her phone builds a zero-knowledge proof in a few seconds. The lender learns one sentence: at least fifteen hundred, three months in a row, verified employer. Not her salary, not her employer." |
-| 1:40 | _Mac: **Verify for $0.10** → the "Income verified" stamp. Point at "checked by Chainlink" and the Applicant ID._ | "The lender pays ten cents through MPP to check it. The payroll records behind it are re-checked independently by Chainlink. And this applicant ID only exists for this lender." |
-| 1:55 | _Mac: **Offer a salary advance**, $450, 2 paychecks. iPhone: the offer appears → **Take $450** → Face ID → "The money is yours"._ | "Now the lender can offer an advance. María takes it, the money lands instantly, and her employer's next two payrolls repay it automatically. That's how payroll loans work in Latin America, and it's why they're cheap." |
-| 2:15 | _iPhone: **Send home** → Mamá → $200 → "Delivered in 0.7 s". Cut to Mom's screen: "Money from María"._ | "And she can send money home. Agora converts it to local money on the way, and it lands in under a second." |
-| 2:30 | _iPhone: **Lock**, then **Sign in with passkey**. Everything is back._ | "Nothing secret is stored on her phone or our servers. Lose the phone, sign in with the passkey, and everything comes back." |
+| 0:45 | _Click **What the internet sees** on that run._ | "This is all the public can see: a company paid some identical-looking pieces to new accounts. Which ones are Daniel's? There's no way to tell." |
+| 0:58 | _iPhone: Daniel's app. Balance envelope, then open the September payslip._ | "Daniel just sees one balance and his payslip, decrypted on his phone. No seed phrase, no gas. His passkey is his account." |
+| 1:10 | _Mac lender: **New income check**, $1,500 → **Create**. QR on screen._ | "Now he wants a loan. Fondo Quincena asks: does he earn at least fifteen hundred a month?" |
+| 1:18 | _iPhone: scan the QR. Show "They will see / They won't see". **Share my Income Passport** → Face ID → "Sealing your Income Passport" → "Sent to Fondo Quincena"._ | "He answers with his Income Passport. His phone builds a zero-knowledge proof in a few seconds. The lender learns one sentence: at least fifteen hundred, three months in a row, verified employer. Not his salary, not his employer." |
+| 1:40 | _Mac: **Verify for $0.10** → the "Income verified" stamp. Point at the payment box (From Fondo Quincena's account, Payment on Monad), "checked by Chainlink" and the Applicant ID._ | "The lender's back office pays ten cents through MPP to check it: our API answers 402, their server pays from its own account, no checkout, and here's the payment on Monad. The payroll records behind it are re-checked independently by Chainlink. And this applicant ID only exists for this lender." |
+| 1:55 | _Mac: **Offer a salary advance**, $450, 2 paychecks. iPhone: the offer card appears on his account → **See the offer** → **Take $450** → Face ID → "The money is yours"._ | "Now the lender can offer an advance. Daniel takes it, the money lands instantly, and his employer's next two payrolls repay it automatically. That's how payroll loans work in Latin America, and it's why they're cheap." |
+| 2:15 | _iPhone: **Send home** → Mamá → $200 → "Delivered in 0.7 s". Cut to Mom's screen: "Money from Daniel"._ | "And he can send money home. Agora converts it to local money on the way, and it lands in under a second." |
+| 2:30 | _iPhone: **Lock**, then **Sign in with passkey**. Everything is back._ | "Nothing secret is stored on his phone or our servers. Lose the phone, sign in with the passkey, and everything comes back." |
 | 2:42 | _sigilo.work/network, scroll "What the internet can learn"._ | "We even measure our own privacy from the public record. Sigilo: get paid in private, prove it in seconds." |
 
 **If you're over 3:00, cut** the Lock beat (2:30) first, then shorten the advance.
@@ -53,9 +53,9 @@ Upload each video to YouTube as **Unlisted** and paste the links into the form.
 Use → to advance. One slide per paragraph. 
 
 1. **(Title)** "Hi, I'm Daniel, and this is Sigilo, the original proof of work."
-2. **(Problem)** "Paying remote teams in stablecoins is fast and cheap. But it turns payroll into a public record. Anyone who learns María's account sees what she earns, who pays her and when, and in Latin America that makes you a target. Then she tries to rent an apartment, and they ask for her payslips and bank statements anyway."
+2. **(Problem)** "Paying remote teams in stablecoins is fast and cheap. But it turns payroll into a public record. Anyone who learns my account sees what I earn, who pays me and when, and in Latin America that makes you a target. Then I try to rent an apartment, and they ask for my payslips and bank statements anyway."
 3. **(Insight)** "Here's what we noticed. The cheapest consumer credit in Latin America is deducted straight from payroll. Crédito consignado in Brazil, deducción de planilla here in Costa Rica. Whoever runs payroll can offer it. So we built a private payroll rail."
-4. **(Product)** "Three layers. Private payroll: salaries split into same-size pieces, paid to fresh accounts, with names and salaries encrypted on the device. An Income Passport: María proves she earns at least fifteen hundred a month without showing her salary or her employer. And revenue: lenders pay ten cents per check, and advances are repaid straight from the next payroll."
+4. **(Product)** "Three layers. Private payroll: salaries split into same-size pieces, paid to fresh accounts, with names and salaries encrypted on the device. An Income Passport: I prove I earn at least fifteen hundred a month without showing my salary or my employer. And revenue: lenders pay ten cents per check, and advances are repaid straight from the next payroll."
 5. **(What the internet sees)** "On-chain you see that a company paid. You can't see who got what."
 6. **(Built)** "It's live today on Monad testnet. Passkeys from Mera instead of wallets, Noir proofs on the phone, Agora for sending money home, MPP for paid checks, Chainlink re-checking our payroll records, and Envio measuring how private we really are. Four people are testing it right now, all family, which is honestly the toughest crowd."
 7. **(Business)** "We charge employers per worker, lenders per check, and take a share of advance origination. We start with LatAm teams already paid in stablecoins, Costa Rica first. Then, with a banking partner like Bridge, any business in the region, with nobody touching a stablecoin."
@@ -71,12 +71,12 @@ Must show: passkey onboarding, an AUSD balance, and a completed send and receive
 
 | Screen | Narration |
 |---|---|
-| _Second browser: sigilo.work/app → type "Mamá" → **Create my account** → passkey prompt → dashboard._ | "This is María's mom in Costa Rica. She creates her Sigilo account with a passkey. No app, no seed phrase, done in a second." |
-| _Mamá: **Get money from family** → the QR and link._ | "She shares this link with her daughter." |
-| _iPhone (María): dashboard. Zoom on "Digital dollars (AUSD)" under the balance._ | "María is paid in AUSD. Her salary is spread across several private accounts, but she sees one balance." |
-| _iPhone: **Send home** → Mamá → $200 → **Send $200 to Mamá**._ | "She sends two hundred dollars home. Behind this button, each piece of her balance signs an authorization tied to this exact payment, and our relayer submits it. She never needs gas." |
-| _"Delivered in 0.7 s"._ | "Our SigiloPay contract swaps the AUSD on Agora's Instant Settlement pair at a fixed price and delivers it to a brand-new account that only her mom controls." |
-| _Mamá's screen: balance updates, "Money from María"._ | "Settled in under a second. Her mom sees the money arrive, and Sigilo never learned who sent it." |
+| _Second browser: sigilo.work/app → type "Mamá" → **Create my account** → passkey prompt → dashboard._ | "This is Daniel's mom in Costa Rica. She creates her Sigilo account with a passkey. No app, no seed phrase, done in a second." |
+| _Mamá: **Get money from family** → the QR and link._ | "She shares this link with her son." |
+| _iPhone (Daniel): dashboard. Zoom on "Digital dollars (AUSD)" under the balance._ | "Daniel is paid in AUSD. His salary is spread across several private accounts, but he sees one balance." |
+| _iPhone: **Send home** → Mamá → $200 → **Send $200 to Mamá**._ | "He sends two hundred dollars home. Behind this button, each piece of his balance signs an authorization tied to this exact payment, and our relayer submits it. He never needs gas." |
+| _"Delivered in 0.7 s"._ | "Our SigiloPay contract swaps the AUSD on Agora's Instant Settlement pair at a fixed price and delivers it to a brand-new account that only his mom controls." |
+| _Mamá's screen: balance updates, "Money from Daniel"._ | "Settled in under a second. His mom sees the money arrive, and Sigilo never learned who sent it." |
 | _Optional: the transaction on the explorer._ | "Payroll, income checks and advances all run on AUSD too." |
 
 ---
@@ -135,9 +135,9 @@ Query for the playground:
 
 | Screen | Narration |
 |---|---|
-| _iPhone, fresh: open an employer invite → **Create my account** → one Face ID → **Activate Income Passport** → dashboard with "ready in X seconds, with N taps"._ | "Mera is our whole account layer. No email, no wallet, no seed phrase. One passkey prompt and María has an account, and we show her how long it took." |
-| _Open payslips, start a send home: no prompt._ | "The passkey derives her key and opens a Mera signing session. Inside it, checking her balance, opening payslips or sending money needs no extra prompt, and she never pays gas." |
-| _Answer an income check: Face ID appears again._ | "Sensitive things ask again: sharing her Income Passport, taking an advance, or Advanced settings." |
+| _iPhone, fresh: open an employer invite → **Create my account** → one Face ID → **Activate Income Passport** → dashboard with "ready in X seconds, with N taps"._ | "Mera is our whole account layer. No email, no wallet, no seed phrase. One passkey prompt and Daniel has an account, and we show him how long it took." |
+| _Open payslips, start a send home: no prompt._ | "The passkey derives his key and opens a Mera signing session. Inside it, checking his balance, opening payslips or sending money needs no extra prompt, and he never pays gas." |
+| _Answer an income check: Face ID appears again._ | "Sensitive things ask again: sharing his Income Passport, taking an advance, or Advanced settings." |
 | _Show **Lock** → Welcome back → **Sign in with passkey**._ | "The session locks itself after fifteen minutes, and nothing secret is ever stored." |
 | _Mac (synced passkey): sigilo.work/app → **Sign in with a passkey** → same balance and payslips._ | "On a new device it's the same passkey, and everything is rebuilt from it." |
 
@@ -149,7 +149,7 @@ Query for the playground:
 |---|---|
 | _Editor: `packages/core/src/keys.ts`, the three salts._ | "Sigilo uses three Mera PRF salts as separate namespaces, and most of what they produce never signs a transaction." |
 | _iPhone: open a payslip._ | "The account namespace derives a key that decrypts payslips. Employers encrypt to it in their browser, our server only stores ciphertext." |
-| _iPhone: answer an income check; Face ID for the passport._ | "The passport namespace, behind its own prompt, derives a zero-knowledge secret. It proves her income, and gives every lender a different ID for her, so lenders can't link her." |
+| _iPhone: answer an income check; Face ID for the passport._ | "The passport namespace, behind its own prompt, derives a zero-knowledge secret. It proves his income, and gives every lender a different ID for him, so lenders can't link him." |
 | _Mac: employer console, the team list._ | "The employer namespace encrypts the roster, names and salaries, before it leaves the browser." |
 | _Mac in a fresh browser (same synced passkey): same payslips open; the lender shows the same Applicant ID on a second check._ | "And because nothing is stored, a second device with the same passkey decrypts the same payslips and gets the same ID with the same lender." |
 
