@@ -440,7 +440,7 @@ function VerifiedResult(props: {
           {DEMO_LENDER.name}&apos;s account <AccountLink address={DEMO_LENDER.address} />
         </dd>
         <dt className="text-muted-foreground">To</dt>
-        <dd>Sigilo Verify API (POST /api/v1/verify, HTTP 402 then 200)</dd>
+        <dd>Sigilo Verify API via MPP</dd>
         <dt className="text-muted-foreground">Payment</dt>
         <dd className="break-all">
           {receipt ? (
