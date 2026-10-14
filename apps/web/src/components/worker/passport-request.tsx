@@ -16,6 +16,7 @@ import { PassportStamp, Rosette, WaxSeal } from "@/components/worker/worker-art"
 import { ErrorNote } from "@/components/worker/worker-views";
 import { AdvanceOffer } from "@/components/worker/advance-offer";
 import { useWorkerAccess } from "@/components/worker/use-worker-access";
+import { rememberAnsweredCheck } from "@/lib/answered-checks";
 import { passportSecretFromPrf, type WorkerKeys } from "@/lib/identity";
 import { getPrf, passkeyErrorMessage } from "@/lib/passkeys";
 import { periodLabel } from "@/lib/periods";
@@ -101,6 +102,7 @@ export function PassportRequest({ requestId }: { requestId: string }) {
         publicInputs: sealed.publicInputs,
       });
       if (!result.ok) throw new AnswerError(result.reason);
+      rememberAnsweredCheck(requestId);
       setStep({ kind: "done", periods: sealed.periods });
     } catch (e) {
       setStep({ kind: "ask" });

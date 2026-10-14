@@ -17,6 +17,7 @@ import {
 } from "@/components/worker/payslip-ledger";
 import { PassportStamp, Rosette, WaxSeal } from "@/components/worker/worker-art";
 import { cn } from "@/lib/utils";
+import { formatAmount } from "@/lib/wallet";
 
 const PRIMARY =
   "h-13 w-full rounded-full text-base font-semibold hover:bg-primary/88 [&_svg:not([class*='size-'])]:size-5";
@@ -184,11 +185,49 @@ export function UnlockView(props: UnlockViewProps) {
 // ---------------------------------------------------------------------------------------------
 // /app, unlocked
 
+export interface PendingOffer {
+  _id: string;
+  lenderName: string;
+  amountCents: number;
+  installments: number;
+}
+
+/** A lender offered an advance after an income check: answer it on the check's page. */
+function OfferCard({ offer }: { offer: PendingOffer }) {
+  const n = offer.installments;
+  return (
+    <section
+      role="status"
+      aria-label="Salary advance offer"
+      className="bg-primary text-primary-foreground mb-4 flex flex-col gap-4 rounded-2xl p-5 shadow-[0_18px_40px_-24px_rgba(15,42,32,0.6)] sm:flex-row sm:items-center sm:justify-between lg:mb-6"
+    >
+      <div className="flex items-start gap-3">
+        <WaxSeal className="size-10 shrink-0 -rotate-12" />
+        <div>
+          <p className="font-wide text-lg leading-snug">
+            {offer.lenderName} offers you {formatAmount(offer.amountCents)} now
+          </p>
+          <p className="text-primary-foreground/80 mt-1 text-sm">
+            Repaid from your next {n === 1 ? "paycheck" : `${n} paychecks`}. Take it or say no.
+          </p>
+        </div>
+      </div>
+      <Link
+        href={`/v/${offer._id}`}
+        className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 focus-visible:ring-ring/50 inline-flex h-11 shrink-0 items-center justify-center rounded-full px-5 text-[0.9375rem] font-semibold outline-none focus-visible:ring-3"
+      >
+        See the offer
+      </Link>
+    </section>
+  );
+}
+
 export function DashboardView({
   balance,
   payslips,
   transfers,
   notice,
+  offers,
   onLock,
 }: {
   /** AUSD base units; null while the balance is being counted. */
@@ -198,6 +237,8 @@ export function DashboardView({
   transfers?: TransferEntry[];
   /** A one-time note, e.g. how fast the account was ready. */
   notice?: string;
+  /** Advance offers waiting for an answer. */
+  offers?: PendingOffer[];
   onLock(): void;
 }) {
   return (
@@ -224,6 +265,9 @@ export function DashboardView({
       }
     >
       <h1 className="sr-only">Your account</h1>
+      {offers?.map((o) => (
+        <OfferCard key={o._id} offer={o} />
+      ))}
       {notice && (
         <p
           role="status"

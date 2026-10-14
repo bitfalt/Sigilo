@@ -2,7 +2,7 @@
 
 // "What the internet sees" (SPEC.md §13): everything a stranger can read about one payroll payment,
 // straight from the public record. A company account paid N same-sized pieces to N brand-new
-// accounts; nothing says which pieces belong to whom. Shown next to María's phone in the demo.
+// accounts; nothing says which pieces belong to whom. Shown next to a worker's phone in the demo.
 
 import { SIGILO_TESTNET } from "@sigilo/core/deployments";
 import { useEffect, useState } from "react";
@@ -143,11 +143,11 @@ export function PublicRecord({ tx }: { tx: string }) {
 
           <aside className="flex flex-col gap-5 lg:sticky lg:top-8">
             <div className="bg-foreground text-background rounded-md p-6">
-              <p className="font-wide text-2xl leading-tight">Which of these are María&apos;s?</p>
+              <p className="font-wide text-2xl leading-tight">Who got which payment?</p>
               <p className="mt-3 text-[1.0625rem] leading-relaxed opacity-85">
                 There&apos;s no way to tell. Every payment goes to a brand-new account, everyone is
-                paid in the same few sizes, and the list is shuffled. Only María&apos;s phone knows
-                which ones are hers, and it shows her one balance.
+                paid in the same few sizes, and the list is shuffled. Only each person&apos;s phone
+                knows which ones are theirs, and it shows them one balance.
               </p>
             </div>
             <Perforation />

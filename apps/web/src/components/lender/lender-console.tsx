@@ -310,6 +310,7 @@ function CheckDetail({ id }: { id: string }) {
           request={check._id}
           thresholdCents={check.thresholdCents}
           offer={check.offer}
+          declined={!!check.offerDeclined}
           advance={check.advance}
         />
       )}
@@ -482,11 +483,13 @@ function AdvancePanel({
   request,
   thresholdCents,
   offer,
+  declined,
   advance,
 }: {
   request: Id<"verificationRequests">;
   thresholdCents: number;
   offer?: { amountCents: number; installments: number; feeBps: number };
+  declined: boolean;
   advance?: {
     advanceId: string;
     vault: string;
@@ -534,10 +537,16 @@ function AdvancePanel({
           You offered {formatAmount(offer.amountCents)}, repaid from the next{" "}
           {offer.installments === 1 ? "paycheck" : `${offer.installments} paychecks`}.
         </p>
-        <p className="text-muted-foreground flex items-center gap-2 text-sm" role="status">
-          <span className="bg-primary size-2 animate-pulse rounded-full motion-reduce:animate-none" />
-          Waiting for the applicant to accept…
-        </p>
+        {declined ? (
+          <p className="text-muted-foreground text-sm" role="status">
+            The applicant said no to this offer.
+          </p>
+        ) : (
+          <p className="text-muted-foreground flex items-center gap-2 text-sm" role="status">
+            <span className="bg-primary size-2 animate-pulse rounded-full motion-reduce:animate-none" />
+            Waiting for the applicant to answer…
+          </p>
+        )}
       </div>
     );
   }

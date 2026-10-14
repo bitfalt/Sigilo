@@ -39,6 +39,7 @@ export const offer = mutation({
     const row = await ctx.db.get("verificationRequests", request);
     if (!row || row.status !== "verified") throw new ConvexError("Verify the income first");
     if (row.advance) throw new ConvexError("This applicant already took an advance");
+    if (row.offerDeclined) throw new ConvexError("The applicant declined the offer");
     const cap = Number(
       maxAdvance(BigInt(row.thresholdCents), DEMO_ADVANCE_TERMS.maxRatioBps) / AUSD_PER_CENT,
     );
@@ -55,6 +56,19 @@ export const offer = mutation({
   },
 });
 
+/** Applicant: say no to the offer. The request id is the capability, as for answering it. */
+export const decline = mutation({
+  args: { request: v.id("verificationRequests") },
+  returns: v.null(),
+  handler: async (ctx, { request }) => {
+    const row = await ctx.db.get("verificationRequests", request);
+    if (!row?.offer) throw new ConvexError("There's no advance offer on this check");
+    if (row.advance) throw new ConvexError("This advance was already taken");
+    await ctx.db.patch("verificationRequests", request, { offerDeclined: true });
+    return null;
+  },
+});
+
 export const loadOffer = internalQuery({
   args: { request: v.id("verificationRequests") },
   returns: v.union(
@@ -64,6 +78,7 @@ export const loadOffer = internalQuery({
       amountCents: v.number(),
       installments: v.number(),
       taken: v.boolean(),
+      declined: v.boolean(),
     }),
   ),
   handler: async (ctx, { request }) => {
@@ -74,6 +89,7 @@ export const loadOffer = internalQuery({
       amountCents: row.offer.amountCents,
       installments: row.offer.installments,
       taken: !!row.advance,
+      declined: !!row.offerDeclined,
     };
   },
 });
@@ -141,6 +157,7 @@ export const take = action({
     const offer = await ctx.runQuery(internal.advances.loadOffer, { request: args.request });
     if (!offer) throw new ConvexError("There's no advance offer on this check");
     if (offer.taken) throw new ConvexError("This advance was already taken");
+    if (offer.declined) throw new ConvexError("You declined this offer");
     if (
       !/^\d+$/.test(args.amount) ||
       BigInt(args.amount) !== BigInt(offer.amountCents) * AUSD_PER_CENT ||

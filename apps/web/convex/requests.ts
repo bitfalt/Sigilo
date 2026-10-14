@@ -60,6 +60,7 @@ const requestView = v.object({
   offer: v.optional(
     v.object({ amountCents: v.number(), installments: v.number(), feeBps: v.number() }),
   ),
+  offerDeclined: v.optional(v.boolean()),
   advance: v.optional(
     v.object({
       _id: v.id("advances"),
@@ -166,6 +167,7 @@ export const get = query({
       expiresAt: row.expiresAt,
       ...(result ? { result } : {}),
       ...(row.offer ? { offer: row.offer } : {}),
+      ...(row.offerDeclined ? { offerDeclined: true } : {}),
       ...(advance
         ? {
             advance: {
@@ -187,6 +189,39 @@ export const get = query({
           }
         : {}),
     };
+  },
+});
+
+const MAX_REMEMBERED = 20;
+
+/**
+ * Worker dashboard: advance offers waiting on the checks this device answered. The ids come
+ * from the device (the server never links a check to an account); each id is its capability.
+ */
+export const pendingOffers = query({
+  args: { requests: v.array(v.string()) },
+  returns: v.array(
+    v.object({
+      _id: v.id("verificationRequests"),
+      lenderName: v.string(),
+      amountCents: v.number(),
+      installments: v.number(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const offers = [];
+    for (const raw of args.requests.slice(0, MAX_REMEMBERED)) {
+      const id = ctx.db.normalizeId("verificationRequests", raw);
+      const row = id ? await ctx.db.get("verificationRequests", id) : null;
+      if (!row?.offer || row.status !== "verified" || row.advance || row.offerDeclined) continue;
+      offers.push({
+        _id: row._id,
+        lenderName: row.lenderName,
+        amountCents: row.offer.amountCents,
+        installments: row.offer.installments,
+      });
+    }
+    return offers;
   },
 });
 

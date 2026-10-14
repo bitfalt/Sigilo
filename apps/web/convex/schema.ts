@@ -114,6 +114,8 @@ export default defineSchema({
       v.object({ amountCents: v.number(), installments: v.number(), feeBps: v.number() }),
     ),
     advance: v.optional(v.id("advances")),
+    // The applicant said no to the offer.
+    offerDeclined: v.optional(v.boolean()),
   }),
 
   verifications: defineTable({

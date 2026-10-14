@@ -11,7 +11,7 @@ import { SIGILO_TESTNET } from "@sigilo/core/deployments";
 import { encryptReceipt, type TransferReceipt } from "@sigilo/core/receipts";
 import { verifierScope } from "@sigilo/core/scope";
 import { createOneTimeAccount, decodePaymentProfile } from "@sigilo/core/stealth";
-import { useConvex, useConvexAuth } from "convex/react";
+import { useConvex, useConvexAuth, useMutation } from "convex/react";
 import { Check, KeyRound } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -21,6 +21,7 @@ import { AppShell } from "@/components/app/app-shell";
 import { useKeys } from "@/components/sigilo-provider";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useWorkerAccess } from "@/components/worker/use-worker-access";
+import { rememberAnsweredCheck } from "@/lib/answered-checks";
 import { PassportStamp, Rosette, WaxSeal } from "@/components/worker/worker-art";
 import { ErrorNote } from "@/components/worker/worker-views";
 import { passportSecretFromPrf, type WorkerKeys } from "@/lib/identity";
@@ -45,6 +46,7 @@ export interface AdvanceRequest {
   thresholdCents: number;
   months: number;
   offer: { amountCents: number; installments: number; feeBps: number };
+  offerDeclined?: boolean;
 }
 
 /** Owed in cents (as the vault computes it, rounded up to a cent) and the per-paycheck installment. */
@@ -58,7 +60,8 @@ export function advanceTerms(offer: AdvanceRequest["offer"]) {
 type Step =
   | { kind: "offer" }
   | { kind: "working"; label: string; startedAt?: number }
-  | { kind: "done"; employerName: string };
+  | { kind: "done"; employerName: string }
+  | { kind: "declined" };
 
 export function AdvanceOffer({
   request,
@@ -72,6 +75,7 @@ export function AdvanceOffer({
   const { known, signIn } = useWorkerAccess();
   const { isAuthenticated } = useConvexAuth();
   const convex = useConvex();
+  const decline = useMutation(api.advances.decline);
   const [step, setStep] = useState<Step>({ kind: "offer" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -79,6 +83,22 @@ export function AdvanceOffer({
   const { offer, lenderName } = request;
   const { owedCents, installmentCents } = advanceTerms(offer);
   const n = offer.installments;
+
+  // So the offer also shows on the account screen if they leave this page.
+  useEffect(() => rememberAnsweredCheck(request._id), [request._id]);
+
+  async function sayNo() {
+    setBusy(true);
+    setError(null);
+    try {
+      await decline({ request: request._id as Id<"verificationRequests"> });
+      setStep({ kind: "declined" });
+    } catch {
+      setError("Couldn't send your answer. Try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function openAccount() {
     setBusy(true);
@@ -203,6 +223,23 @@ export function AdvanceOffer({
     );
   }
 
+  if (step.kind === "declined" || (request.offerDeclined && step.kind === "offer")) {
+    return (
+      <AppShell>
+        <div className="flex flex-1 flex-col justify-center gap-6 py-8">
+          <h1 className={HEADLINE}>No advance, no problem</h1>
+          <p className="text-muted-foreground text-[1.0625rem] leading-relaxed">
+            You turned down {formatAmount(offer.amountCents)} from {lenderName}. Nothing was
+            borrowed and nothing comes out of your paychecks.
+          </p>
+          <Link href="/app" className={cn(buttonVariants({ size: "lg" }), PRIMARY)}>
+            Open my account
+          </Link>
+        </div>
+      </AppShell>
+    );
+  }
+
   if (taken && step.kind === "offer") {
     return (
       <AppShell>
@@ -294,6 +331,15 @@ export function AdvanceOffer({
               )}
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="lg"
+            className="h-12 rounded-full text-base"
+            onClick={sayNo}
+            disabled={busy}
+          >
+            No thanks
+          </Button>
           {error && <ErrorNote>{error}</ErrorNote>}
         </div>
       </div>
