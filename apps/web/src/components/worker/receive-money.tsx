@@ -61,7 +61,7 @@ function ReceiveLink({ account }: { account: string }) {
   const [copied, setCopied] = useState(false);
   // Rendered on the client only (after unlocking), so window and device storage are available.
   const url = useMemo(() => {
-    const name = loadIdentity("worker")?.displayName?.trim().split(/\s+/)[0] ?? "";
+    const name = loadIdentity("worker")?.displayName?.trim().slice(0, 40) ?? "";
     const link = new URL("/app/send", window.location.origin);
     link.searchParams.set("to", account);
     if (name) link.searchParams.set("name", name);

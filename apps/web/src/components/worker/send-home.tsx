@@ -11,7 +11,7 @@ import { useQuery } from "convex/react";
 import { Check, HouseHeart, UserRound } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { type FormEvent, useEffect, useMemo, useState } from "react";
+import { type FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/app/app-shell";
 import { useKeys } from "@/components/sigilo-provider";
@@ -74,6 +74,9 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
   const [to, setTo] = useState<Contact | null>(() => (params.get("to") ? contacts[0]! : null));
 
   const stored = useQuery(api.receipts.mine, account ? {} : "skip");
+  // Bumped after each send: a new payment form, and balances re-read (sending leaves no new
+  // receipt here, so `stored` alone wouldn't refresh them).
+  const [round, setRound] = useState(0);
   const [wallet, setWallet] = useState<Wallet | null>(null);
   useEffect(() => {
     if (!stored) return;
@@ -82,7 +85,12 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
     return () => {
       cancelled = true;
     };
-  }, [stored, keys]);
+  }, [stored, keys, round]);
+  const startOver = useCallback(() => {
+    setWallet(null);
+    setTo(null);
+    setRound((r) => r + 1);
+  }, []);
 
   if (!to) {
     return (
@@ -97,7 +105,16 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
       />
     );
   }
-  return <Payment to={to} wallet={wallet} self={account} onChangeRecipient={() => setTo(null)} />;
+  return (
+    <Payment
+      key={round}
+      to={to}
+      wallet={wallet}
+      self={account}
+      onChangeRecipient={() => setTo(null)}
+      onFinished={startOver}
+    />
+  );
 }
 
 function PickRecipient({
@@ -171,11 +188,14 @@ function Payment({
   wallet,
   self,
   onChangeRecipient,
+  onFinished,
 }: {
   to: Contact;
   wallet: Wallet | null;
   self: Id<"accounts"> | null;
   onChangeRecipient?: () => void;
+  /** After a delivery: back to "who are you sending to?" with fresh balances. */
+  onFinished(): void;
 }) {
   const recipient = useQuery(api.transfers.recipient, { account: to.account });
   const [amount, setAmount] = useState("");
@@ -200,7 +220,7 @@ function Payment({
         amount: BigInt(cents) * 10_000n,
         recipient,
         quote: quoteCtk,
-        from: loadIdentity("worker")?.displayName?.trim().split(/\s+/)[0] || "Family",
+        from: loadIdentity("worker")?.displayName?.trim().slice(0, 40) || "Family",
       });
       await relay.action(api.transfers.sendHome, {
         auths: prepared.auths.map((a) => ({
@@ -224,6 +244,12 @@ function Payment({
       setError(errorMessage(err, "The money didn't go out. Nothing was sent; try again."));
     }
   }
+
+  // Leaving the delivered screen (or the page, which Next keeps alive) starts a new send.
+  const delivered = step.kind === "done";
+  useEffect(() => {
+    if (delivered) return () => onFinished();
+  }, [delivered, onFinished]);
 
   if (recipient === null) {
     return (
@@ -250,9 +276,19 @@ function Payment({
               It arrived as local money, converted by Agora on the way. Only {name} can see it.
             </p>
           </div>
-          <Link href="/app" className={cn(buttonVariants({ size: "lg" }), PRIMARY)}>
-            Back to my account
-          </Link>
+          <div className="flex flex-col gap-3">
+            <Link href="/app" className={cn(buttonVariants({ size: "lg" }), PRIMARY)}>
+              Back to my account
+            </Link>
+            <Button
+              variant="ghost"
+              size="lg"
+              className="h-12 rounded-full text-base"
+              onClick={onFinished}
+            >
+              Send more
+            </Button>
+          </div>
         </div>
       </Shell>
     );
