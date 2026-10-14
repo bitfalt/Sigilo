@@ -17,6 +17,7 @@ import {
 } from "@/components/worker/payslip-ledger";
 import { PassportStamp, Rosette, WaxSeal } from "@/components/worker/worker-art";
 import { cn } from "@/lib/utils";
+import type { SentEntry } from "@/lib/sent-history";
 import { formatAmount } from "@/lib/wallet";
 
 const PRIMARY =
@@ -228,6 +229,7 @@ export function DashboardView({
   transfers,
   notice,
   offers,
+  sent,
   onLock,
 }: {
   /** AUSD base units; null while the balance is being counted. */
@@ -239,6 +241,8 @@ export function DashboardView({
   notice?: string;
   /** Advance offers waiting for an answer. */
   offers?: PendingOffer[];
+  /** Money sent home from this device. */
+  sent?: SentEntry[];
   onLock(): void;
 }) {
   return (
@@ -284,7 +288,7 @@ export function DashboardView({
           </div>
         </div>
         <div className="lg:col-span-7 lg:pt-2">
-          <PayslipLedger payslips={payslips} transfers={transfers} />
+          <PayslipLedger payslips={payslips} transfers={transfers} {...(sent ? { sent } : {})} />
         </div>
       </div>
     </AppShell>

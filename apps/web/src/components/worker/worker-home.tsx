@@ -10,6 +10,7 @@ import { useKeys, useSigilo } from "@/components/sigilo-provider";
 import { useWorkerAccess } from "@/components/worker/use-worker-access";
 import { DashboardView, UnlockView } from "@/components/worker/worker-views";
 import { useAnsweredChecks } from "@/lib/answered-checks";
+import { useSentHistory } from "@/lib/sent-history";
 import type { WorkerKeys } from "@/lib/identity";
 import { finishFirstRun, startFirstRun, takeFirstRun } from "@/lib/first-run";
 import { passkeyErrorMessage } from "@/lib/passkeys";
@@ -86,6 +87,7 @@ function WorkerDashboard({ keys }: { keys: WorkerKeys }) {
 
   const stored = useQuery(api.receipts.mine, registered ? {} : "skip");
   const answered = useAnsweredChecks();
+  const sent = useSentHistory(keys.address);
   const offers = useQuery(
     api.requests.pendingOffers,
     answered.length > 0 ? { requests: answered } : "skip",
@@ -118,6 +120,7 @@ function WorkerDashboard({ keys }: { keys: WorkerKeys }) {
       payslips={payslips}
       transfers={transfers}
       {...(offers ? { offers } : {})}
+      sent={sent}
       notice={
         firstRun
           ? `Your account was ready in ${(firstRun.ms / 1000).toFixed(1)} seconds, with ${firstRun.taps === 1 ? "1 tap" : `${firstRun.taps} taps`}. No app to install, no password.`

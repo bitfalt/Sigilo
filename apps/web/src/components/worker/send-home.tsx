@@ -24,6 +24,7 @@ import { ErrorNote } from "@/components/worker/worker-views";
 import { quoteCtk } from "@/lib/chain";
 import { CONVEX_URL } from "@/lib/config";
 import { type Contact, loadContacts, parseSendLink, saveContact } from "@/lib/contacts";
+import { recordSent } from "@/lib/sent-history";
 import { errorMessage } from "@/lib/errors";
 import type { WorkerKeys } from "@/lib/identity";
 import { loadIdentity } from "@/lib/public-identity";
@@ -108,6 +109,7 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
   return (
     <Payment
       key={round}
+      sender={keys.address}
       to={to}
       wallet={wallet}
       self={account}
@@ -189,7 +191,10 @@ function Payment({
   self,
   onChangeRecipient,
   onFinished,
+  sender,
 }: {
+  /** This account, for its on-device "Money sent" list. */
+  sender: string;
   to: Contact;
   wallet: Wallet | null;
   self: Id<"accounts"> | null;
@@ -238,7 +243,9 @@ function Payment({
         recipient: to.account as Id<"accounts">,
         receipt: prepared.receipt,
       });
-      setStep({ kind: "done", ms: Math.round(now() - started), cents });
+      const ms = Math.round(now() - started);
+      recordSent(sender, { name, cents, at: performance.timeOrigin + now(), ms });
+      setStep({ kind: "done", ms, cents });
     } catch (err) {
       setStep({ kind: "form" });
       setError(errorMessage(err, "The money didn't go out. Nothing was sent; try again."));

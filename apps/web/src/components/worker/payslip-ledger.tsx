@@ -5,11 +5,12 @@
 
 import { periodFromIndex } from "@sigilo/core/period";
 import type { PayslipReceipt, TransferReceipt } from "@sigilo/core/receipts";
-import { Check, ChevronDown, HandCoins, Share } from "lucide-react";
+import { Check, ChevronDown, HandCoins, Send, Share } from "lucide-react";
 import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { periodLabel } from "@/lib/periods";
+import type { SentEntry } from "@/lib/sent-history";
 import { formatCents } from "@/lib/wallet";
 
 export interface PayslipEntry {
@@ -26,15 +27,19 @@ export interface TransferEntry {
 export function PayslipLedger({
   payslips,
   transfers = [],
+  sent = [],
 }: {
   payslips: PayslipEntry[] | null;
   /** Money sent to this person by family (Send home). */
   transfers?: TransferEntry[];
+  /** Money this person sent home from this device. */
+  sent?: SentEntry[];
 }) {
-  if (transfers.length > 0) {
+  if (transfers.length > 0 || sent.length > 0) {
     return (
       <div className="flex flex-col gap-10">
-        <ReceivedLedger transfers={transfers} />
+        {sent.length > 0 && <SentLedger sent={sent} />}
+        {transfers.length > 0 && <ReceivedLedger transfers={transfers} />}
         {payslips && payslips.length > 0 && <PayslipLedger payslips={payslips} />}
       </div>
     );
@@ -195,6 +200,50 @@ function EmptyPayslips() {
         {copied ? "Link copied" : "Invite your employer"}
       </Button>
     </div>
+  );
+}
+
+/** Money sent home from this device, newest first: to whom, when, how much. */
+function SentLedger({ sent }: { sent: SentEntry[] }) {
+  return (
+    <section aria-labelledby="sent-title">
+      <h2 id="sent-title" className="font-wide text-xl">
+        Money sent
+      </h2>
+      <ul className="border-foreground/15 mt-4 border-t">
+        {sent.map((entry) => {
+          const when = new Date(entry.at);
+          return (
+            <li
+              key={`${entry.at}-${entry.name}`}
+              className="border-foreground/15 grid min-h-16 grid-cols-[3rem_1fr_auto] items-center gap-x-3 border-b py-3.5"
+            >
+              <span className="leading-none" aria-hidden="true">
+                <span className="font-wide block text-[1.0625rem]">
+                  {when.toLocaleString("en-US", { month: "short" })}
+                </span>
+                <span className="text-muted-foreground mt-1 block text-xs tabular-nums">
+                  {when.getDate()}
+                </span>
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Send aria-hidden="true" className="text-primary size-4 shrink-0" />
+                  <span className="break-words">Sent to {entry.name || "family"}</span>
+                </span>
+                <span className="text-muted-foreground block text-sm">
+                  Delivered in {(entry.ms / 1000).toFixed(1)} s
+                  <span className="sr-only">, {when.toLocaleDateString("en-US")}</span>
+                </span>
+              </span>
+              <span className="font-wide text-[1.0625rem] tabular-nums">
+                −{formatCents(BigInt(entry.cents))}
+              </span>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
   );
 }
 
