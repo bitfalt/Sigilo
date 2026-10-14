@@ -64,15 +64,14 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
   const account = useRegisteredAccount(keys);
   // A "send to" link selects (and remembers) its recipient. This view only renders on the
   // client (it needs unlocked keys), so reading device storage here is safe.
-  const [contacts] = useState<Contact[]>(() => {
+  const [contacts, setContacts] = useState<Contact[]>(() => {
     const linked = params.get("to");
     return linked
       ? saveContact({ account: linked, name: params.get("name")?.slice(0, 40) ?? "" })
       : loadContacts();
   });
-  const [to, setTo] = useState<Contact | null>(() =>
-    params.get("to") || contacts.length === 1 ? contacts[0]! : null,
-  );
+  // Only a link picks the recipient; otherwise ask every time (someone saved, or someone new).
+  const [to, setTo] = useState<Contact | null>(() => (params.get("to") ? contacts[0]! : null));
 
   const stored = useQuery(api.receipts.mine, account ? {} : "skip");
   const [wallet, setWallet] = useState<Wallet | null>(null);
@@ -85,18 +84,31 @@ function SendForm({ keys }: { keys: WorkerKeys }) {
     };
   }, [stored, keys]);
 
-  if (!to) return <PickRecipient contacts={contacts} onPick={setTo} />;
-  return (
-    <Payment
-      to={to}
-      wallet={wallet}
-      self={account}
-      onChangeRecipient={contacts.length > 1 ? () => setTo(null) : undefined}
-    />
-  );
+  if (!to) {
+    return (
+      <PickRecipient
+        contacts={contacts}
+        onPick={setTo}
+        onAdd={(c) => {
+          const next = saveContact(c);
+          setContacts(next);
+          setTo(next[0]!);
+        }}
+      />
+    );
+  }
+  return <Payment to={to} wallet={wallet} self={account} onChangeRecipient={() => setTo(null)} />;
 }
 
-function PickRecipient({ contacts, onPick }: { contacts: Contact[]; onPick(c: Contact): void }) {
+function PickRecipient({
+  contacts,
+  onPick,
+  onAdd,
+}: {
+  contacts: Contact[];
+  onPick(c: Contact): void;
+  onAdd(c: Contact): void;
+}) {
   const [link, setLink] = useState("");
   const parsed = parseSendLink(link);
 
@@ -119,7 +131,7 @@ function PickRecipient({ contacts, onPick }: { contacts: Contact[]; onPick(c: Co
                 className="focus-visible:ring-ring/50 hover:bg-foreground/[0.03] flex min-h-16 w-full items-center gap-3 rounded-lg px-2 text-left outline-none focus-visible:ring-3"
               >
                 <UserRound aria-hidden="true" className="text-muted-foreground size-5" />
-                <span className="font-medium">{c.name || "Family member"}</span>
+                <span className="font-medium">Send to {c.name || "family member"}</span>
               </button>
             </li>
           ))}
@@ -129,11 +141,11 @@ function PickRecipient({ contacts, onPick }: { contacts: Contact[]; onPick(c: Co
         className="mt-auto flex flex-col gap-2"
         onSubmit={(e) => {
           e.preventDefault();
-          if (parsed) onPick(saveContact(parsed)[0]!);
+          if (parsed) onAdd(parsed);
         }}
       >
         <label htmlFor="send-link" className="text-sm font-semibold">
-          Paste their link
+          {contacts.length > 0 ? "Someone new? Paste their link" : "Paste their link"}
         </label>
         <Input
           id="send-link"
