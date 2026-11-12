@@ -24,7 +24,10 @@
     "e2e:passkey": "node scripts/e2e-passkey.mjs",
     "e2e:accounts": "tsx --env-file=.env.local scripts/e2e-accounts.mts",
     "e2e:offer": "tsx --env-file=.env.local scripts/e2e-offer.mts",
-    "og:render": "node scripts/render-og.mjs"
+    "og:render": "node scripts/render-og.mjs",
+    "cf:build": "opennextjs-cloudflare build",
+    "cf:preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "cf:deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@aztec/bb.js": "5.2.1",
